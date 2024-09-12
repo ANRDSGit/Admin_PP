@@ -131,6 +131,21 @@ app.delete('/patients/:id', authenticateToken, async (req, res) => {
   res.send({ message: 'Patient deleted' });
 });
 
+// Update patient age
+app.put('/patients/:id', authenticateToken, async (req, res) => {
+  try {
+    const { age } = req.body;
+    const updatedPatient = await Patient.findByIdAndUpdate(req.params.id, { age }, { new: true });
+    if (!updatedPatient) {
+      return res.status(404).json({ message: 'Patient not found' });
+    }
+    res.json(updatedPatient);
+  } catch (error) {
+    res.status(500).json({ error: 'Error updating patient age' });
+  }
+});
+
+
 // Define Appointment Schema
 const appointmentSchema = new mongoose.Schema({
   patientName: String,
@@ -198,6 +213,29 @@ app.get('/appointments/remote/:id', authenticateToken, async (req, res) => {
   }
 });
 
+app.put('/appointments/:id', authenticateToken, async (req, res) => {
+  const { date, time, appointmentType } = req.body;
+
+  if (!['physical', 'remote'].includes(appointmentType)) {
+    return res.status(400).send({ message: 'Invalid appointment type' });
+  }
+
+  try {
+    const updatedAppointment = await Appointment.findByIdAndUpdate(
+      req.params.id,
+      { date, time, appointmentType },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedAppointment) {
+      return res.status(404).send({ message: 'Appointment not found' });
+    }
+
+    res.send(updatedAppointment);
+  } catch (error) {
+    handleError(res, error, 'Error updating appointment');
+  }
+});
 
 // Define Medication Schema
 const medicationSchema = new mongoose.Schema({

@@ -12,6 +12,7 @@ const Appointments = () => {
     time: '',
     appointmentType: 'physical',
   });
+  const [updateAppointment, setUpdateAppointment] = useState(null); // for storing selected appointment to update
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -103,18 +104,43 @@ const Appointments = () => {
     navigate(`/remote/${id}`);
   };
 
-  // Separate the appointments into physical and remote types
+  const handleEdit = (appointment) => {
+    setUpdateAppointment(appointment); // Set the selected appointment for editing
+  };
+
+  const handleUpdate = () => {
+    if (!updateAppointment) return;
+
+    setLoading(true);
+    axios.put(`http://localhost:5000/appointments/${updateAppointment._id}`, updateAppointment, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    .then((res) => {
+      setAppointments(
+        appointments.map((apt) =>
+          apt._id === res.data._id ? res.data : apt
+        )
+      );
+      setUpdateAppointment(null); // Clear the update form
+    })
+    .catch((err) => {
+      setError('Error updating appointment');
+      console.error(err);
+    })
+    .finally(() => {
+      setLoading(false);
+    });
+  };
+
   const physicalAppointments = appointments.filter((apt) => apt.appointmentType === 'physical');
   const remoteAppointments = appointments.filter((apt) => apt.appointmentType === 'remote');
 
   return (
     <Box p={2}>
-      {/* Title */}
       <Typography variant="h4" gutterBottom textAlign="center">
         Appointments
       </Typography>
-      
-      {/* Search Box */}
+
       <Grid container spacing={2} alignItems="center" justifyContent="center" sx={{ mb: 2 }}>
         <Grid item xs={12} md={6}>
           <TextField
@@ -129,7 +155,6 @@ const Appointments = () => {
         </Grid>
       </Grid>
 
-      {/* Create Appointment Form */}
       <Paper elevation={3} sx={{ p: 2, mb: 2 }}>
         <Typography variant="h6" gutterBottom textAlign="center">Create New Appointment</Typography>
         <Grid container spacing={2} justifyContent="center">
@@ -179,10 +204,52 @@ const Appointments = () => {
         </Grid>
       </Paper>
 
+      {updateAppointment && (
+        <Paper elevation={3} sx={{ p: 2, mb: 2 }}>
+          <Typography variant="h6" gutterBottom textAlign="center">Update Appointment</Typography>
+          <Grid container spacing={2} justifyContent="center">
+            <Grid item xs={12} md={2}>
+              <TextField
+                label="Date"
+                type="date"
+                InputLabelProps={{ shrink: true }}
+                value={updateAppointment.date}
+                onChange={(e) => setUpdateAppointment({ ...updateAppointment, date: e.target.value })}
+                fullWidth
+              />
+            </Grid>
+            <Grid item xs={12} md={2}>
+              <TextField
+                label="Time"
+                type="time"
+                InputLabelProps={{ shrink: true }}
+                value={updateAppointment.time}
+                onChange={(e) => setUpdateAppointment({ ...updateAppointment, time: e.target.value })}
+                fullWidth
+              />
+            </Grid>
+            <Grid item xs={12} md={2}>
+              <TextField
+                select
+                label="Appointment Type"
+                value={updateAppointment.appointmentType}
+                onChange={(e) => setUpdateAppointment({ ...updateAppointment, appointmentType: e.target.value })}
+                fullWidth
+              >
+                <MenuItem value="physical">Physical</MenuItem>
+                <MenuItem value="remote">Remote</MenuItem>
+              </TextField>
+            </Grid>
+            <Grid item xs={12} md={2}>
+              <Button variant="contained" onClick={handleUpdate} fullWidth>Update Appointment</Button>
+            </Grid>
+          </Grid>
+        </Paper>
+      )}
+
       {loading && <CircularProgress />}
       {error && <Typography color="error">{error}</Typography>}
 
-      {/* Display Physical Appointments */}
       <Typography variant="h5" gutterBottom textAlign="center">
         Physical Appointments
       </Typography>
@@ -197,7 +264,7 @@ const Appointments = () => {
             {
               field: 'actions',
               headerName: 'Actions',
-              width: 150,
+              width: 200,
               renderCell: (params) => (
                 <>
                   <Button
@@ -206,6 +273,14 @@ const Appointments = () => {
                     onClick={() => handleDelete(params.row._id)}
                   >
                     Delete
+                  </Button>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={() => handleEdit(params.row)}
+                    sx={{ ml: 1 }}
+                  >
+                    Edit
                   </Button>
                 </>
               ),
@@ -218,7 +293,6 @@ const Appointments = () => {
         />
       </Box>
 
-      {/* Display Remote Appointments */}
       <Typography variant="h5" gutterBottom textAlign="center">
         Remote Appointments
       </Typography>
@@ -226,14 +300,14 @@ const Appointments = () => {
         <DataGrid
           rows={remoteAppointments}
           columns={[
-            { field: '_id', headerName: 'ID', width: 200 },
+            { field: '_id', headerName: 'ID', width: 150 },
             { field: 'patientName', headerName: 'Patient Name', width: 150 },
             { field: 'date', headerName: 'Date', width: 150 },
             { field: 'time', headerName: 'Time', width: 100 },
             {
               field: 'actions',
               headerName: 'Actions',
-              width: 350,
+              width: 400,
               renderCell: (params) => (
                 <>
                   <Button
@@ -247,8 +321,17 @@ const Appointments = () => {
                     variant="contained"
                     color="primary"
                     onClick={() => handleRedirectRemote(params.row._id)}
+                    sx={{ ml: 1 }}
                   >
                     Manage Remote
+                  </Button>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={() => handleEdit(params.row)}
+                    sx={{ ml: 1 }}
+                  >
+                    Edit
                   </Button>
                 </>
               ),

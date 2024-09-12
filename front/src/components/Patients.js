@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { DataGrid } from '@mui/x-data-grid';
-import { Box, Typography, Button, TextField, MenuItem, Select, CircularProgress, Grid, Paper } from '@mui/material';
+import { Box, Typography, Button, TextField, CircularProgress, Grid, Paper } from '@mui/material';
 
 const App = () => {
   const [patients, setPatients] = useState([]);
@@ -9,7 +9,8 @@ const App = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const token = localStorage.getItem('token'); // Retrieve token from localStorage or other secure storage
+  const [editingPatient, setEditingPatient] = useState(null); // Track which patient is being edited
+  const token = localStorage.getItem('token');
 
   // Fetch all patients
   useEffect(() => {
@@ -87,16 +88,33 @@ const App = () => {
     });
   };
 
+  // Update patient's age
+  const handleAgeUpdate = (id, age) => {
+    setLoading(true);
+    axios.put(`http://localhost:5000/patients/${id}`, { age: Number(age) }, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    .then((res) => {
+      setPatients(patients.map((p) => (p._id === id ? res.data : p)));
+      setEditingPatient(null); // Reset after updating
+    })
+    .catch((err) => {
+      setError('Error updating patient age');
+      console.error(err);
+    })
+    .finally(() => {
+      setLoading(false);
+    });
+  };
+
   return (
     <Box p={2}>
       <Typography variant="h4" gutterBottom textAlign="center">
         Patient Dashboard
       </Typography>
 
-      {/* Error message */}
       {error && <Typography color="error" mb={2}>{error}</Typography>}
 
-      {/* Loading indicator */}
       {loading && <CircularProgress />}
 
       {/* Search bar */}
@@ -137,14 +155,12 @@ const App = () => {
             />
           </Grid>
           <Grid item xs={12} md={2}>
-            <Select
+            <TextField
+              label="Gender"
               value={newPatient.gender}
               onChange={(e) => setNewPatient({ ...newPatient, gender: e.target.value })}
               fullWidth
-            >
-              <MenuItem value="Male">Male</MenuItem>
-              <MenuItem value="Female">Female</MenuItem>
-            </Select>
+            />
           </Grid>
           <Grid item xs={12} md={2}>
             <TextField
@@ -156,7 +172,7 @@ const App = () => {
           </Grid>
           <Grid item xs={12} md={2}>
             <TextField
-              label="Password" // New input for password
+              label="Password"
               type="password"
               value={newPatient.password}
               onChange={(e) => setNewPatient({ ...newPatient, password: e.target.value })}
@@ -181,21 +197,61 @@ const App = () => {
             }))}
             columns={[
               { field: 'name', headerName: 'Patient Name', width: 150 },
-              { field: 'age', headerName: 'Age', width: 100 },
+              {
+                field: 'age',
+                headerName: 'Age',
+                width: 100,
+                renderCell: (params) => {
+                  const isEditing = editingPatient === params.row.id;
+                  return isEditing ? (
+                    <TextField
+                      type="number"
+                      value={params.row.age}
+                      onChange={(e) =>
+                        setPatients(patients.map((p) =>
+                          p._id === params.row.id ? { ...p, age: e.target.value } : p
+                        ))
+                      }
+                    />
+                  ) : (
+                    params.row.age
+                  );
+                },
+              },
               { field: 'gender', headerName: 'Gender', width: 100 },
               { field: 'bloodGroup', headerName: 'Blood Group', width: 120 },
               {
                 field: 'actions',
                 headerName: 'Actions',
-                width: 150,
+                width: 200,
                 renderCell: (params) => (
-                  <Button
-                    variant="contained"
-                    color="secondary"
-                    onClick={() => handleDelete(params.row.id)}
-                  >
-                    Delete
-                  </Button>
+                  <>
+                    {editingPatient === params.row.id ? (
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        onClick={() => handleAgeUpdate(params.row.id, params.row.age)}
+                      >
+                        Save
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="contained"
+                        color="secondary"
+                        onClick={() => setEditingPatient(params.row.id)}
+                      >
+                        Edit
+                      </Button>
+                    )}
+                    <Button
+                      variant="contained"
+                      color="secondary"
+                      onClick={() => handleDelete(params.row.id)}
+                      sx={{ ml: 1 }}
+                    >
+                      Delete
+                    </Button>
+                  </>
                 ),
               },
             ]}
