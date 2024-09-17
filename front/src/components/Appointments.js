@@ -3,14 +3,15 @@ import axios from 'axios';
 import { DataGrid } from '@mui/x-data-grid';
 import {
   Box, Typography, Button, TextField, CircularProgress, MenuItem, Paper, Grid,
-  Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Switch, FormControlLabel
+  Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Switch, FormControlLabel, Select, InputLabel, FormControl
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 
 const Appointments = () => {
   const [appointments, setAppointments] = useState([]);
+  const [patients, setPatients] = useState([]); // To store patients from the database
   const [newAppointment, setNewAppointment] = useState({
-    patientName: '',
+    patientId: '', // Use patient ID for the appointment
     date: '',
     time: '',
     appointmentType: 'physical',
@@ -39,6 +40,8 @@ const Appointments = () => {
 
   useEffect(() => {
     setLoading(true);
+
+    // Fetch appointments
     axios
       .get('http://localhost:5000/appointments', {
         headers: { Authorization: `Bearer ${token}` },
@@ -53,6 +56,19 @@ const Appointments = () => {
       .finally(() => {
         setLoading(false);
       });
+
+    // Fetch patients
+    axios
+      .get('http://localhost:5000/patients', {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((res) => {
+        setPatients(res.data); // Save the list of patients
+      })
+      .catch((err) => {
+        setError('Error fetching patients');
+        console.error(err);
+      });
   }, [token]);
 
   const handleCreate = () => {
@@ -63,7 +79,7 @@ const Appointments = () => {
       })
       .then((res) => {
         setAppointments([...appointments, res.data]);
-        setNewAppointment({ patientName: '', date: '', time: '', appointmentType: 'physical' });
+        setNewAppointment({ patientId: '', date: '', time: '', appointmentType: 'physical' });
       })
       .catch((err) => {
         setError('Error creating appointment');
@@ -196,12 +212,20 @@ const Appointments = () => {
         </Typography>
         <Grid container spacing={2} justifyContent="center">
           <Grid item xs={12} md={4}>
-            <TextField
-              label="Patient Name"
-              value={newAppointment.patientName}
-              onChange={(e) => setNewAppointment({ ...newAppointment, patientName: e.target.value })}
-              fullWidth
-            />
+            {/* Patient Dropdown */}
+            <FormControl fullWidth>
+              <InputLabel>Patient</InputLabel>
+              <Select
+                value={newAppointment.patientId}
+                onChange={(e) => setNewAppointment({ ...newAppointment, patientId: e.target.value })}
+              >
+                {patients.map((patient) => (
+                  <MenuItem key={patient._id} value={patient._id}>
+                    {patient.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
           </Grid>
           <Grid item xs={12} md={2}>
             <TextField
@@ -230,53 +254,6 @@ const Appointments = () => {
           </Grid>
         </Grid>
       </Paper>
-
-      {updateAppointment && (
-        <Paper elevation={3} sx={{ p: 2, mb: 2 }}>
-          <Typography variant="h6" gutterBottom textAlign="center">
-            Update Appointment
-          </Typography>
-          <Grid container spacing={2} justifyContent="center">
-            <Grid item xs={12} md={2}>
-              <TextField
-                label="Date"
-                type="date"
-                InputLabelProps={{ shrink: true }}
-                value={updateAppointment.date}
-                onChange={(e) => setUpdateAppointment({ ...updateAppointment, date: e.target.value })}
-                fullWidth
-              />
-            </Grid>
-            <Grid item xs={12} md={2}>
-              <TextField
-                label="Time"
-                type="time"
-                InputLabelProps={{ shrink: true }}
-                value={updateAppointment.time}
-                onChange={(e) => setUpdateAppointment({ ...updateAppointment, time: e.target.value })}
-                fullWidth
-              />
-            </Grid>
-            <Grid item xs={12} md={2}>
-              <TextField
-                select
-                label="Appointment Type"
-                value={updateAppointment.appointmentType}
-                onChange={(e) => setUpdateAppointment({ ...updateAppointment, appointmentType: e.target.value })}
-                fullWidth
-              >
-                <MenuItem value="physical">Physical</MenuItem>
-                <MenuItem value="remote">Remote</MenuItem>
-              </TextField>
-            </Grid>
-            <Grid item xs={12} md={2}>
-              <Button variant="contained" onClick={handleUpdate} fullWidth>
-                Update Appointment
-              </Button>
-            </Grid>
-          </Grid>
-        </Paper>
-      )}
 
       {loading ? (
         <CircularProgress />
