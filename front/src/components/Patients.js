@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { DataGrid } from '@mui/x-data-grid';
-import { Box, Typography, Button, TextField, CircularProgress, Grid, Paper } from '@mui/material';
+import { Box, Typography, Button, TextField, CircularProgress, Grid, Paper, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, MenuItem, Select, InputLabel, FormControl } from '@mui/material';
+import 'react-toastify/dist/ReactToastify.css';
 
 const App = () => {
   const [patients, setPatients] = useState([]);
@@ -9,10 +10,11 @@ const App = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [editingPatient, setEditingPatient] = useState(null); // Track which patient is being edited
+  const [editingPatient, setEditingPatient] = useState(null);
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false); // Dialog state
+  const [patientToDelete, setPatientToDelete] = useState(null); // Track which patient to delete
   const token = localStorage.getItem('token');
 
-  // Fetch all patients
   useEffect(() => {
     setLoading(true);
     axios.get('http://localhost:5000/patients', {
@@ -41,7 +43,7 @@ const App = () => {
     })
     .then((res) => {
       setPatients([...patients, res.data.patient]);
-      setNewPatient({ name: '', age: '', gender: '', bloodGroup: '', password: '' }); // Reset after creation
+      setNewPatient({ name: '', age: '', gender: '', bloodGroup: '', password: '' }); // Reset form
     })
     .catch((err) => {
       setError('Error creating patient');
@@ -70,14 +72,21 @@ const App = () => {
     });
   };
 
-  // Delete patient
-  const handleDelete = (id) => {
+  // Open confirmation dialog for deletion
+  const handleDeleteConfirmation = (id) => {
+    setPatientToDelete(id);
+    setConfirmDialogOpen(true);
+  };
+
+  // Delete patient after confirmation
+  const handleDelete = () => {
     setLoading(true);
-    axios.delete(`http://localhost:5000/patients/${id}`, {
+    axios.delete(`http://localhost:5000/patients/${patientToDelete}`, {
       headers: { Authorization: `Bearer ${token}` }
     })
     .then(() => {
-      setPatients(patients.filter((p) => p._id !== id));
+      setPatients(patients.filter((p) => p._id !== patientToDelete));  // Remove patient from list
+      setConfirmDialogOpen(false);  // Close the dialog after deletion
     })
     .catch((err) => {
       setError('Error deleting patient');
@@ -149,26 +158,41 @@ const App = () => {
           <Grid item xs={12} md={2}>
             <TextField
               label="Age"
+              type="number"
               value={newPatient.age}
               onChange={(e) => setNewPatient({ ...newPatient, age: e.target.value })}
               fullWidth
             />
           </Grid>
           <Grid item xs={12} md={2}>
-            <TextField
-              label="Gender"
-              value={newPatient.gender}
-              onChange={(e) => setNewPatient({ ...newPatient, gender: e.target.value })}
-              fullWidth
-            />
+            <FormControl fullWidth>
+              <InputLabel>Gender</InputLabel>
+              <Select
+                value={newPatient.gender}
+                onChange={(e) => setNewPatient({ ...newPatient, gender: e.target.value })}
+              >
+                <MenuItem value="Male">Male</MenuItem>
+                <MenuItem value="Female">Female</MenuItem>
+              </Select>
+            </FormControl>
           </Grid>
           <Grid item xs={12} md={2}>
-            <TextField
-              label="Blood Group"
-              value={newPatient.bloodGroup}
-              onChange={(e) => setNewPatient({ ...newPatient, bloodGroup: e.target.value })}
-              fullWidth
-            />
+            <FormControl fullWidth>
+              <InputLabel>Blood Group</InputLabel>
+              <Select
+                value={newPatient.bloodGroup}
+                onChange={(e) => setNewPatient({ ...newPatient, bloodGroup: e.target.value })}
+              >
+                <MenuItem value="A+">A+</MenuItem>
+                <MenuItem value="A-">A-</MenuItem>
+                <MenuItem value="B+">B+</MenuItem>
+                <MenuItem value="B-">B-</MenuItem>
+                <MenuItem value="AB+">AB+</MenuItem>
+                <MenuItem value="AB-">AB-</MenuItem>
+                <MenuItem value="O+">O+</MenuItem>
+                <MenuItem value="O-">O-</MenuItem>
+              </Select>
+            </FormControl>
           </Grid>
           <Grid item xs={12} md={2}>
             <TextField
@@ -193,7 +217,7 @@ const App = () => {
           <DataGrid
             rows={patients.map((patient) => ({
               ...patient,
-              id: patient._id, // Ensure proper id mapping
+              id: patient._id,
             }))}
             columns={[
               { field: 'name', headerName: 'Patient Name', width: 150 },
@@ -246,7 +270,7 @@ const App = () => {
                     <Button
                       variant="contained"
                       color="secondary"
-                      onClick={() => handleDelete(params.row.id)}
+                      onClick={() => handleDeleteConfirmation(params.row.id)}
                       sx={{ ml: 1 }}
                     >
                       Delete
@@ -261,6 +285,26 @@ const App = () => {
           />
         </Box>
       )}
+
+      {/* Confirmation dialog for deletion */}
+      <Dialog open={confirmDialogOpen} onClose={() => setConfirmDialogOpen(false)}>
+        <DialogTitle>Confirm Delete</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete this patient? This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmDialogOpen(false)} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleDelete} color="secondary">
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Toast container */}
     </Box>
   );
 };
