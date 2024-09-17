@@ -1,28 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { DataGrid } from '@mui/x-data-grid';
-import {
-  Box, Typography, Button, TextField, CircularProgress, MenuItem, Paper, Grid,
-  Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Switch, FormControlLabel, Select, InputLabel, FormControl
-} from '@mui/material';
+import { Box, Typography, Button, TextField, CircularProgress, MenuItem, Paper, Grid, Tabs, Tab, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Snackbar } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 
 const Appointments = () => {
   const [appointments, setAppointments] = useState([]);
-  const [patients, setPatients] = useState([]); // To store patients from the database
   const [newAppointment, setNewAppointment] = useState({
-    patientId: '', // Use patient ID for the appointment
+    patientName: '',
     date: '',
     time: '',
     appointmentType: 'physical',
   });
-  const [updateAppointment, setUpdateAppointment] = useState(null);
+  const [patients, setPatients] = useState([]);
+  const [updateAppointment, setUpdateAppointment] = useState(null);  // Appointment being updated
+  const [editedAppointment, setEditedAppointment] = useState({});
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [isPhysicalView, setIsPhysicalView] = useState(true); // Toggle for physical and remote view
-  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false); // Confirmation dialog
-  const [selectedDeleteId, setSelectedDeleteId] = useState(null); // Store selected ID for deletion
+  const [tabIndex, setTabIndex] = useState(0);
+  const [openDialog, setOpenDialog] = useState(false);  // Dialog state
+  const [deletingAppointment, setDeletingAppointment] = useState(null);  // Appointment to delete
+  const [openEditDialog, setOpenEditDialog] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');  // Success message for Snackbar
   const token = localStorage.getItem('token');
   const navigate = useNavigate();
 
@@ -38,93 +38,100 @@ const Appointments = () => {
     refreshPage();
   }, []);
 
+  // Fetch patients when the component loads
   useEffect(() => {
     setLoading(true);
+    axios.get('http://localhost:5000/patients', {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    .then((res) => {
+      setPatients(res.data);
+    })
+    .catch((err) => {
+      setError('Error fetching patients');
+      console.error(err);
+    })
+    .finally(() => {
+      setLoading(false);
+    });
+  }, [token]);
 
-    // Fetch appointments
-    axios
-      .get('http://localhost:5000/appointments', {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then((res) => {
-        setAppointments(res.data);
-      })
-      .catch((err) => {
-        setError('Error fetching appointments');
-        console.error(err);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-
-    // Fetch patients
-    axios
-      .get('http://localhost:5000/patients', {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then((res) => {
-        setPatients(res.data); // Save the list of patients
-      })
-      .catch((err) => {
-        setError('Error fetching patients');
-        console.error(err);
-      });
+  // Fetch appointments when the component loads
+  useEffect(() => {
+    setLoading(true);
+    axios.get('http://localhost:5000/appointments', {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    .then((res) => {
+      setAppointments(res.data);
+    })
+    .catch((err) => {
+      setError('Error fetching appointments');
+      console.error(err);
+    })
+    .finally(() => {
+      setLoading(false);
+    });
   }, [token]);
 
   const handleCreate = () => {
     setLoading(true);
-    axios
-      .post('http://localhost:5000/appointments', newAppointment, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then((res) => {
-        setAppointments([...appointments, res.data]);
-        setNewAppointment({ patientId: '', date: '', time: '', appointmentType: 'physical' });
-      })
-      .catch((err) => {
-        setError('Error creating appointment');
-        console.error(err);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+    axios.post('http://localhost:5000/appointments', newAppointment, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    .then((res) => {
+      setAppointments([...appointments, res.data]);
+      setNewAppointment({ patientName: '', date: '', time: '', appointmentType: 'physical' });
+    })
+    .catch((err) => {
+      setError('Error creating appointment');
+      console.error(err);
+    })
+    .finally(() => {
+      setLoading(false);
+    });
   };
 
   const handleSearch = () => {
     setLoading(true);
-    axios
-      .get(`http://localhost:5000/appointments/search/${searchTerm}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then((res) => {
-        setAppointments(res.data);
-      })
-      .catch((err) => {
-        setError('Error searching appointments');
-        console.error(err);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+    axios.get(`http://localhost:5000/appointments/search/${searchTerm}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    .then((res) => {
+      setAppointments(res.data);
+    })
+    .catch((err) => {
+      setError('Error searching appointments');
+      console.error(err);
+    })
+    .finally(() => {
+      setLoading(false);
+    });
   };
 
   const handleDelete = (id) => {
+    setOpenDialog(true);
+    setDeletingAppointment(id);
+  };
+
+  const confirmDelete = () => {
     setLoading(true);
-    axios
-      .delete(`http://localhost:5000/appointments/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then(() => {
-        setAppointments(appointments.filter((apt) => apt._id !== id));
-        setConfirmDialogOpen(false);
-      })
-      .catch((err) => {
-        setError('Error deleting appointment');
-        console.error(err);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+    axios.delete(`http://localhost:5000/appointments/${deletingAppointment}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    .then(() => {
+      setAppointments(appointments.filter((apt) => apt._id !== deletingAppointment));
+      setSuccessMessage('Appointment successfully deleted');
+    })
+    .catch((err) => {
+      setError('Error deleting appointment');
+      console.error(err);
+    })
+    .finally(() => {
+      setLoading(false);
+      setOpenDialog(false);
+      setDeletingAppointment(null);
+    });
   };
 
   const handleRedirectRemote = (id) => {
@@ -133,43 +140,34 @@ const Appointments = () => {
 
   const handleEdit = (appointment) => {
     setUpdateAppointment(appointment);
+    setEditedAppointment({
+      date: appointment.date,
+      time: appointment.time,
+      appointmentType: appointment.appointmentType
+    });
+    setOpenEditDialog(true);  // Open the edit modal
   };
 
   const handleUpdate = () => {
-    if (!updateAppointment) return;
-
     setLoading(true);
-    axios
-      .put(`http://localhost:5000/appointments/${updateAppointment._id}`, updateAppointment, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then((res) => {
-        setAppointments(appointments.map((apt) => (apt._id === res.data._id ? res.data : apt)));
-        setUpdateAppointment(null);
-      })
-      .catch((err) => {
-        setError('Error updating appointment');
-        console.error(err);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+    axios.put(`http://localhost:5000/appointments/${updateAppointment._id}`, editedAppointment, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    .then((res) => {
+      setAppointments(appointments.map(apt => (apt._id === res.data._id ? res.data : apt)));
+      setSuccessMessage('Appointment successfully updated');
+    })
+    .finally(() => {
+      setOpenEditDialog(false);
+      setLoading(false);
+    });
   };
 
-  const openConfirmDialog = (id) => {
-    setSelectedDeleteId(id);
-    setConfirmDialogOpen(true);
+  const handleCloseSnackbar = () => {
+    setSuccessMessage('');
   };
-
-  const closeConfirmDialog = () => {
-    setConfirmDialogOpen(false);
-    setSelectedDeleteId(null);
-  };
-
   const physicalAppointments = appointments.filter((apt) => apt.appointmentType === 'physical');
   const remoteAppointments = appointments.filter((apt) => apt.appointmentType === 'remote');
-
-  const currentAppointments = isPhysicalView ? physicalAppointments : remoteAppointments;
 
   return (
     <Box p={2}>
@@ -187,45 +185,27 @@ const Appointments = () => {
           />
         </Grid>
         <Grid item xs={12} md={2}>
-          <Button variant="contained" onClick={handleSearch} fullWidth>
-            Search
-          </Button>
+          <Button variant="contained" onClick={handleSearch} fullWidth>Search</Button>
         </Grid>
       </Grid>
 
-      <Box sx={{ textAlign: 'center', mb: 2 }}>
-        <FormControlLabel
-          control={
-            <Switch
-              checked={!isPhysicalView}
-              onChange={() => setIsPhysicalView(!isPhysicalView)}
-              color="primary"
-            />
-          }
-          label={isPhysicalView ? 'Switch to Remote Appointments' : 'Switch to Physical Appointments'}
-        />
-      </Box>
-
       <Paper elevation={3} sx={{ p: 2, mb: 2 }}>
-        <Typography variant="h6" gutterBottom textAlign="center">
-          Create New {isPhysicalView ? 'Physical' : 'Remote'} Appointment
-        </Typography>
+        <Typography variant="h6" gutterBottom textAlign="center">Create New Appointment</Typography>
         <Grid container spacing={2} justifyContent="center">
           <Grid item xs={12} md={4}>
-            {/* Patient Dropdown */}
-            <FormControl fullWidth>
-              <InputLabel>Patient</InputLabel>
-              <Select
-                value={newAppointment.patientId}
-                onChange={(e) => setNewAppointment({ ...newAppointment, patientId: e.target.value })}
-              >
-                {patients.map((patient) => (
-                  <MenuItem key={patient._id} value={patient._id}>
-                    {patient.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            <TextField
+              select
+              label="Patient Name"
+              value={newAppointment.patientName}
+              onChange={(e) => setNewAppointment({ ...newAppointment, patientName: e.target.value })}
+              fullWidth
+            >
+              {patients.map((patient) => (
+                <MenuItem key={patient._id} value={patient.name}>
+                  {patient.name}
+                </MenuItem>
+              ))}
+            </TextField>
           </Grid>
           <Grid item xs={12} md={2}>
             <TextField
@@ -248,93 +228,165 @@ const Appointments = () => {
             />
           </Grid>
           <Grid item xs={12} md={2}>
-            <Button variant="contained" onClick={handleCreate} fullWidth>
-              Create Appointment
-            </Button>
+            <TextField
+              select
+              label="Appointment Type"
+              value={newAppointment.appointmentType}
+              onChange={(e) => setNewAppointment({ ...newAppointment, appointmentType: e.target.value })}
+              fullWidth
+            >
+              <MenuItem value="physical">Physical</MenuItem>
+              <MenuItem value="remote">Remote</MenuItem>
+            </TextField>
+          </Grid>
+          <Grid item xs={12} md={2}>
+            <Button variant="contained" onClick={handleCreate} fullWidth>Create Appointment</Button>
           </Grid>
         </Grid>
       </Paper>
 
+      <Tabs
+        value={tabIndex}
+        onChange={(e, newValue) => setTabIndex(newValue)}
+        centered
+        indicatorColor="primary"
+        textColor="primary"
+      >
+        <Tab label="Physical Appointments" />
+        <Tab label="Remote Appointments" />
+      </Tabs>
+
       {loading ? (
         <CircularProgress />
       ) : (
-        <Paper elevation={3} sx={{ p: 2 }}>
-          <Typography variant="h6" gutterBottom textAlign="center">
-            {isPhysicalView ? 'Physical' : 'Remote'} Appointments
-          </Typography>
-
-          <DataGrid
-            rows={currentAppointments}
-            columns={[
-              { field: 'patientName', headerName: 'Patient Name', width: 200 },
-              { field: 'date', headerName: 'Date', width: 150 },
-              { field: 'time', headerName: 'Time', width: 150 },
-              {
-                field: 'actions',
-                headerName: 'Actions',
-                renderCell: (params) => (
-                  <>
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      onClick={() => handleEdit(params.row)}
-                      sx={{ mr: 1 }}
-                    >
-                      Edit
-                    </Button>
-                    <Button
-                      variant="contained"
-                      color="secondary"
-                      onClick={() => openConfirmDialog(params.row._id)}
-                    >
-                      Delete
-                    </Button>
-                    {!isPhysicalView && (
-                      <Button
-                        variant="contained"
-                        color="primary"
-                        onClick={() => handleRedirectRemote(params.row._id)}
-                        sx={{ ml: 1 }}
-                      >
-                        Start Remote
-                      </Button>
-                    )}
-                  </>
-                ),
-                width: 400,
-              },
-            ]}
-            pageSize={5}
-            rowsPerPageOptions={[5]}
-            autoHeight
-            getRowId={(row) => row._id}
-          />
-        </Paper>
+        <>
+          {tabIndex === 0 && (
+            <Box>
+              <Typography variant="h6" gutterBottom>
+                Physical Appointments
+              </Typography>
+              <DataGrid
+                rows={physicalAppointments}
+                columns={[
+                  { field: 'patientName', headerName: 'Patient Name', width: 150 },
+                  { field: 'date', headerName: 'Date', width: 150 },
+                  { field: 'time', headerName: 'Time', width: 150 },
+                  {
+                    field: 'actions',
+                    headerName: 'Actions',
+                    renderCell: (params) => (
+                      <Box>
+                        <Button variant="outlined" onClick={() => handleEdit(params.row)}>Edit</Button>
+                        <Button variant="outlined" color="error" onClick={() => handleDelete(params.row._id)}>Delete</Button>
+                      </Box>
+                    ),
+                    width: 250
+                  }
+                ]}
+                pageSize={5}
+                rowsPerPageOptions={[5]}
+                getRowId={(row) => row._id}
+              />
+            </Box>
+          )}
+          {tabIndex === 1 && (
+            <Box>
+              <Typography variant="h6" gutterBottom>
+                Remote Appointments
+              </Typography>
+              <DataGrid
+                rows={remoteAppointments}
+                columns={[
+                  { field: 'patientName', headerName: 'Patient Name', width: 150 },
+                  { field: 'date', headerName: 'Date', width: 150 },
+                  { field: 'time', headerName: 'Time', width: 150 },
+                  {
+                    field: 'actions',
+                    headerName: 'Actions',
+                    renderCell: (params) => (
+                      <Box>
+                        <Button variant="outlined" onClick={() => handleRedirectRemote(params.row._id)}>Start Remote</Button>
+                        <Button variant="outlined" onClick={() => handleEdit(params.row)}>Edit</Button>
+                        <Button variant="outlined" color="error" onClick={() => handleDelete(params.row._id)}>Delete</Button>
+                      </Box>
+                    ),
+                    width: 350
+                  }
+                ]}
+                pageSize={5}
+                rowsPerPageOptions={[5]}
+                getRowId={(row) => row._id}
+              />
+            </Box>
+          )}
+        </>
       )}
 
-      {/* Delete Confirmation Dialog */}
+      {/* Confirmation Dialog */}
       <Dialog
-        open={confirmDialogOpen}
-        onClose={closeConfirmDialog}
+        open={openDialog}
+        onClose={() => setOpenDialog(false)}
+        aria-labelledby="confirm-dialog-title"
+        aria-describedby="confirm-dialog-description"
       >
-        <DialogTitle>Delete Appointment</DialogTitle>
+        <DialogTitle id="confirm-dialog-title">Confirm Deletion</DialogTitle>
         <DialogContent>
-          <DialogContentText>
+          <DialogContentText id="confirm-dialog-description">
             Are you sure you want to delete this appointment? This action cannot be undone.
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={closeConfirmDialog}>Cancel</Button>
-          <Button
-            onClick={() => handleDelete(selectedDeleteId)}
-            color="secondary"
-          >
-            Confirm
-          </Button>
+          <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
+          <Button onClick={confirmDelete} color="error">Delete</Button>
         </DialogActions>
       </Dialog>
 
-      {error && <Typography color="error">{error}</Typography>}
+      <Dialog open={openEditDialog} onClose={() => setOpenEditDialog(false)}>
+        <DialogTitle>Edit Appointment</DialogTitle>
+        <DialogContent>
+          <TextField
+            label="Date"
+            type="date"
+            InputLabelProps={{ shrink: true }}
+            fullWidth
+            value={editedAppointment.date}
+            onChange={(e) => setEditedAppointment({ ...editedAppointment, date: e.target.value })}
+            margin="dense"
+          />
+          <TextField
+            label="Time"
+            type="time"
+            InputLabelProps={{ shrink: true }}
+            fullWidth
+            value={editedAppointment.time}
+            onChange={(e) => setEditedAppointment({ ...editedAppointment, time: e.target.value })}
+            margin="dense"
+          />
+          <TextField
+            select
+            label="Appointment Type"
+            value={editedAppointment.appointmentType}
+            onChange={(e) => setEditedAppointment({ ...editedAppointment, appointmentType: e.target.value })}
+            fullWidth
+            margin="dense"
+          >
+            <MenuItem value="physical">Physical</MenuItem>
+            <MenuItem value="remote">Remote</MenuItem>
+          </TextField>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenEditDialog(false)}>Cancel</Button>
+          <Button onClick={handleUpdate} variant="contained" color="primary">Update</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Success Snackbar */}
+      <Snackbar
+        open={!!successMessage}
+        autoHideDuration={4000}
+        onClose={handleCloseSnackbar}
+        message={successMessage}
+      />
     </Box>
   );
 };

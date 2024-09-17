@@ -161,13 +161,19 @@ const Appointment = mongoose.model('Appointment', appointmentSchema);
 app.post('/appointments', authenticateToken, async (req, res) => {
   const { patientName, date, time, appointmentType } = req.body;
 
+  // Parse and validate the date
+  const parsedDate = new Date(date);
+  if (isNaN(parsedDate)) {
+    return res.status(400).send({ message: 'Invalid date format' });
+  }
+
   if (!['physical', 'remote'].includes(appointmentType)) {
     return res.status(400).send({ message: 'Invalid appointment type' });
   }
 
   const appointment = new Appointment({
     patientName,
-    date,
+    date: parsedDate,  // Use parsed date
     time,
     appointmentType,
   });
@@ -189,8 +195,33 @@ app.get('/appointments/search/:patientName', authenticateToken, async (req, res)
 });
 
 app.put('/appointments/:id', authenticateToken, async (req, res) => {
-  const appointment = await Appointment.findByIdAndUpdate(req.params.id, req.body, { new: true });
-  res.send(appointment);
+  const { date, time, appointmentType } = req.body;
+
+  // Parse and validate the date
+  const parsedDate = new Date(date);
+  if (isNaN(parsedDate)) {
+    return res.status(400).send({ message: 'Invalid date format' });
+  }
+
+  if (!['physical', 'remote'].includes(appointmentType)) {
+    return res.status(400).send({ message: 'Invalid appointment type' });
+  }
+
+  try {
+    const updatedAppointment = await Appointment.findByIdAndUpdate(
+      req.params.id,
+      { date: parsedDate, time, appointmentType },  // Use parsed date
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedAppointment) {
+      return res.status(404).send({ message: 'Appointment not found' });
+    }
+
+    res.send(updatedAppointment);
+  } catch (error) {
+    res.status(500).json({ error: 'Error updating appointment' });
+  }
 });
 
 app.delete('/appointments/:id', authenticateToken, async (req, res) => {
