@@ -12,7 +12,7 @@ app.use(cors());
 app.use(bodyParser.json());
 
 const corsOptions = {
-  origin: 'admin-pp-front.vercel.app',  // Allow only your frontend's origin
+  origin: 'https://admin-pp-front.vercel.app',  // Allow only your frontend's origin
   credentials: true,            // Allow cookies
   optionsSuccessStatus: 200
 };
