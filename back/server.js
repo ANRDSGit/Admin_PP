@@ -11,6 +11,14 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
+const corsOptions = {
+  origin: 'admin-pp-front.vercel.app',  // Allow only your frontend's origin
+  credentials: true,            // Allow cookies
+  optionsSuccessStatus: 200
+};
+app.use(cors(corsOptions));
+
+
 // Connect to MongoDB
 mongoose.connect('mongodb+srv://anrds:1234@cluster0.iowtq.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0');
 
