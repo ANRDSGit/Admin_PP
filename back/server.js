@@ -308,22 +308,6 @@ app.delete('/medications/:id', authenticateToken, async (req, res) => {
   res.send({ message: 'Medication deleted' });
 });
 
-io.on("connection", (socket) => {
-  socket.emit("me", socket.id);
-
-  socket.on("disconnect", () => {
-    socket.broadcast.emit("callEnded");
-  });
-
-  socket.on("callUser", ({ userToCall, signalData, from, name }) => {
-    io.to(userToCall).emit("callUser", { signal: signalData, from, name });
-  });
-
-  socket.on("answerCall", (data) => {
-    io.to(data.to).emit("callAccepted", data.signal);
-  });
-});
-
 // Start the server
 app.listen(5000, () => {
   console.log('Backend running on port 5000');
