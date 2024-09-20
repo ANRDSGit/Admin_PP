@@ -5,18 +5,10 @@ const bodyParser = require('body-parser');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const http = require('http');
-const socketio = require('socket.io');
-
 const SECRET_KEY = "secret";
 
 const app = express();
-const server = http.createServer(app);
-const io = socketio(server, {
-  cors: {
-    origin: "*",
-    methods: ["GET", "POST"]
-  }
-});
+
 app.use(cors());
 app.use(bodyParser.json());
 
