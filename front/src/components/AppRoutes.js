@@ -16,7 +16,7 @@ const AppRoutes = ({ isAuthenticated }) => {
 
     const timeout = setTimeout(() => {
       setPageLoading(false); // Disable loading after a short delay to simulate data fetching
-    }, 1000); // Simulate a 1 second loading delay
+    }, 500); // Simulate a 1 second loading delay
 
     return () => clearTimeout(timeout); // Cleanup timeout on unmount
   }, [location]);
