@@ -18,7 +18,6 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 
-
 // Connect to MongoDB
 mongoose.connect('mongodb+srv://anrds:1234@cluster0.iowtq.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0');
 
@@ -57,7 +56,7 @@ app.post('/admin/login', async (req, res) => {
     return res.status(400).send({ message: 'Invalid credentials' });
   }
 
-  const token = jwt.sign({ id: admin._id },SECRET_KEY, { expiresIn: '1h' });
+  const token = jwt.sign({ id: admin._id }, SECRET_KEY, { expiresIn: '1h' });
   res.send({ token });
 });
 
@@ -130,37 +129,22 @@ app.delete('/patients/:id', authenticateToken, async (req, res) => {
   res.send({ message: 'Patient deleted' });
 });
 
-// Update patient age
-app.put('/patients/:id', authenticateToken, async (req, res) => {
-  try {
-    const { age } = req.body;
-    const updatedPatient = await Patient.findByIdAndUpdate(req.params.id, { age }, { new: true });
-    if (!updatedPatient) {
-      return res.status(404).json({ message: 'Patient not found' });
-    }
-    res.json(updatedPatient);
-  } catch (error) {
-    res.status(500).json({ error: 'Error updating patient age' });
-  }
-});
-
-
 // Define Appointment Schema
 const appointmentSchema = new mongoose.Schema({
   patientName: String,
   date: Date,
   time: String,
-  appointmentType: { type: String, enum: ['physical', 'remote'], required: true },  // New field
+  appointmentType: { type: String, enum: ['physical', 'remote'], required: true },  
+  remoteLink: String,  // Add field to store remote appointment link
   createdAt: { type: Date, default: Date.now },
 });
 
 const Appointment = mongoose.model('Appointment', appointmentSchema);
 
-// Routes for CRUD operations on appointments (protected)
+// Create appointment route
 app.post('/appointments', authenticateToken, async (req, res) => {
   const { patientName, date, time, appointmentType } = req.body;
 
-  // Parse and validate the date
   const parsedDate = new Date(date);
   if (isNaN(parsedDate)) {
     return res.status(400).send({ message: 'Invalid date format' });
@@ -172,13 +156,34 @@ app.post('/appointments', authenticateToken, async (req, res) => {
 
   const appointment = new Appointment({
     patientName,
-    date: parsedDate,  // Use parsed date
+    date: parsedDate,
     time,
     appointmentType,
   });
 
   await appointment.save();
   res.send(appointment);
+});
+
+// Update remote appointment link
+app.put('/appointments/:id/link', authenticateToken, async (req, res) => {
+  const { remoteLink } = req.body;
+
+  try {
+    const updatedAppointment = await Appointment.findByIdAndUpdate(
+      req.params.id,
+      { remoteLink },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedAppointment) {
+      return res.status(404).send({ message: 'Appointment not found' });
+    }
+
+    res.send(updatedAppointment);
+  } catch (error) {
+    res.status(500).json({ error: 'Error updating appointment link' });
+  }
 });
 
 app.get('/appointments', authenticateToken, async (req, res) => {
@@ -193,78 +198,10 @@ app.get('/appointments/search/:patientName', authenticateToken, async (req, res)
   res.send(appointments);
 });
 
-app.put('/appointments/:id', authenticateToken, async (req, res) => {
-  const { date, time, appointmentType } = req.body;
-
-  // Parse and validate the date
-  const parsedDate = new Date(date);
-  if (isNaN(parsedDate)) {
-    return res.status(400).send({ message: 'Invalid date format' });
-  }
-
-  if (!['physical', 'remote'].includes(appointmentType)) {
-    return res.status(400).send({ message: 'Invalid appointment type' });
-  }
-
-  try {
-    const updatedAppointment = await Appointment.findByIdAndUpdate(
-      req.params.id,
-      { date: parsedDate, time, appointmentType },  // Use parsed date
-      { new: true, runValidators: true }
-    );
-
-    if (!updatedAppointment) {
-      return res.status(404).send({ message: 'Appointment not found' });
-    }
-
-    res.send(updatedAppointment);
-  } catch (error) {
-    res.status(500).json({ error: 'Error updating appointment' });
-  }
-});
-
+// Delete appointment
 app.delete('/appointments/:id', authenticateToken, async (req, res) => {
   await Appointment.findByIdAndDelete(req.params.id);
   res.send({ message: 'Appointment deleted' });
-});
-
-// Handle remote appointments
-app.get('/appointments/remote/:id', authenticateToken, async (req, res) => {
-  const appointment = await Appointment.findById(req.params.id);
-  
-  if (!appointment) {
-    return res.status(404).send({ message: 'Appointment not found' });
-  }
-
-  if (appointment.appointmentType === 'remote') {
-    res.send({ message: 'Redirecting to remote appointment page', appointment });
-  } else {
-    res.status(400).send({ message: 'This is not a remote appointment' });
-  }
-});
-
-app.put('/appointments/:id', authenticateToken, async (req, res) => {
-  const { date, time, appointmentType } = req.body;
-
-  if (!['physical', 'remote'].includes(appointmentType)) {
-    return res.status(400).send({ message: 'Invalid appointment type' });
-  }
-
-  try {
-    const updatedAppointment = await Appointment.findByIdAndUpdate(
-      req.params.id,
-      { date, time, appointmentType },
-      { new: true, runValidators: true }
-    );
-
-    if (!updatedAppointment) {
-      return res.status(404).send({ message: 'Appointment not found' });
-    }
-
-    res.send(updatedAppointment);
-  } catch (error) {
-    handleError(res, error, 'Error updating appointment');
-  }
 });
 
 // Define Medication Schema
@@ -272,7 +209,7 @@ const medicationSchema = new mongoose.Schema({
   name: String,
   price: Number,
   quantity: Number,
-  imageUrl: String,  // Store the image URL for now (if you wish to store files, look into multer for file uploads)
+  imageUrl: String,
   createdAt: { type: Date, default: Date.now },
 });
 
