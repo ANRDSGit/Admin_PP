@@ -14,10 +14,11 @@ const App = () => {
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false); // Dialog state
   const [patientToDelete, setPatientToDelete] = useState(null); // Track which patient to delete
   const token = localStorage.getItem('token');
+  const apiBaseUrl = process.env.REACT_APP_API_BASE_URL;
 
   useEffect(() => {
     setLoading(true);
-    axios.get('http://localhost:5000/patients', {
+    axios.get(`${apiBaseUrl}/patients`, {
       headers: { Authorization: `Bearer ${token}` }
     })
     .then((res) => {
@@ -35,7 +36,7 @@ const App = () => {
   // Create new patient
   const handleCreate = () => {
     setLoading(true);
-    axios.post('http://localhost:5000/patients', {
+    axios.post(`${apiBaseUrl}/patients`, {
       ...newPatient,
       age: Number(newPatient.age),
     }, {
@@ -57,7 +58,7 @@ const App = () => {
   // Search patients
   const handleSearch = () => {
     setLoading(true);
-    axios.get(`http://localhost:5000/patients/search/${searchTerm}`, {
+    axios.get(`${apiBaseUrl}/patients/search/${searchTerm}`, {
       headers: { Authorization: `Bearer ${token}` }
     })
     .then((res) => {
@@ -81,7 +82,7 @@ const App = () => {
   // Delete patient after confirmation
   const handleDelete = () => {
     setLoading(true);
-    axios.delete(`http://localhost:5000/patients/${patientToDelete}`, {
+    axios.delete(`${apiBaseUrl}/patients/${patientToDelete}`, {
       headers: { Authorization: `Bearer ${token}` }
     })
     .then(() => {
@@ -100,7 +101,7 @@ const App = () => {
   // Update patient's age
   const handleAgeUpdate = (id, age) => {
     setLoading(true);
-    axios.put(`http://localhost:5000/patients/${id}`, { age: Number(age) }, {
+    axios.put(`${apiBaseUrl}/patients/${id}`, { age: Number(age) }, {
       headers: { Authorization: `Bearer ${token}` }
     })
     .then((res) => {

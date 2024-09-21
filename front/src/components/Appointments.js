@@ -25,6 +25,7 @@ const Appointments = () => {
   const [successMessage, setSuccessMessage] = useState('');  // Success message for Snackbar
   const token = localStorage.getItem('token');
   const navigate = useNavigate();
+  const apiBaseUrl = process.env.REACT_APP_API_BASE_URL;
 
   const refreshPage = () => {
     const hasRefreshed = localStorage.getItem('hasRefreshed');
@@ -38,10 +39,12 @@ const Appointments = () => {
     refreshPage();
   }, []);
 
+  
+
   // Fetch patients when the component loads
   useEffect(() => {
     setLoading(true);
-    axios.get('http://localhost:5000/patients', {
+    axios.get(`${apiBaseUrl}/patients`, {
       headers: { Authorization: `Bearer ${token}` }
     })
     .then((res) => {
@@ -59,7 +62,7 @@ const Appointments = () => {
   // Fetch appointments when the component loads
   useEffect(() => {
     setLoading(true);
-    axios.get('http://localhost:5000/appointments', {
+    axios.get(`${apiBaseUrl}/appointments`, {
       headers: { Authorization: `Bearer ${token}` }
     })
     .then((res) => {
@@ -76,7 +79,7 @@ const Appointments = () => {
 
   const handleCreate = () => {
     setLoading(true);
-    axios.post('http://localhost:5000/appointments', newAppointment, {
+    axios.post(`${apiBaseUrl}/appointments`, newAppointment, {
       headers: { Authorization: `Bearer ${token}` }
     })
     .then((res) => {
@@ -94,7 +97,7 @@ const Appointments = () => {
 
   const handleSearch = () => {
     setLoading(true);
-    axios.get(`http://localhost:5000/appointments/search/${searchTerm}`, {
+    axios.get(`${apiBaseUrl}/appointments/search/${searchTerm}`, {
       headers: { Authorization: `Bearer ${token}` }
     })
     .then((res) => {
@@ -116,7 +119,7 @@ const Appointments = () => {
 
   const confirmDelete = () => {
     setLoading(true);
-    axios.delete(`http://localhost:5000/appointments/${deletingAppointment}`, {
+    axios.delete(`${apiBaseUrl}/appointments/${deletingAppointment}`, {
       headers: { Authorization: `Bearer ${token}` }
     })
     .then(() => {
@@ -150,7 +153,7 @@ const Appointments = () => {
 
   const handleUpdate = () => {
     setLoading(true);
-    axios.put(`http://localhost:5000/appointments/${updateAppointment._id}`, editedAppointment, {
+    axios.put(`${apiBaseUrl}/appointments/${updateAppointment._id}`, editedAppointment, {
       headers: { Authorization: `Bearer ${token}` }
     })
     .then((res) => {

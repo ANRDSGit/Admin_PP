@@ -8,6 +8,8 @@ const AdminLogin = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const apiBaseUrl = process.env.REACT_APP_API_BASE_URL;
+  
 
   useEffect(() => {
     // Check if there's already a token in localStorage
@@ -19,7 +21,8 @@ const AdminLogin = () => {
   }, [navigate]);
 
   const handleLogin = () => {
-    axios.post('http://localhost:5000/admin/login', { username, password })
+    
+    axios.post(`${apiBaseUrl}/admin/login`, { username, password })
       .then((response) => {
         localStorage.setItem('token', response.data.token); // Save token in localStorage
         navigate('/appointments'); // Redirect to the appointments page

@@ -15,11 +15,12 @@ const Medications = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const token = localStorage.getItem('token'); // Retrieve token from localStorage or other secure storage
+  const apiBaseUrl = process.env.REACT_APP_API_BASE_URL;
 
   // Fetch all medications
   useEffect(() => {
     setLoading(true);
-    axios.get('http://localhost:5000/medications', {
+    axios.get(`${apiBaseUrl}/medications`, {
       headers: { Authorization: `Bearer ${token}` }
     })
     .then((res) => {
@@ -37,7 +38,7 @@ const Medications = () => {
   // Search medications and populate form and table
   const handleSearch = () => {
     setLoading(true);
-    axios.get(`http://localhost:5000/medications/search/${searchTerm}`, {
+    axios.get(`${apiBaseUrl}/medications/search/${searchTerm}`, {
       headers: { Authorization: `Bearer ${token}` }
     })
     .then((res) => {
@@ -66,7 +67,7 @@ const Medications = () => {
   // Create new medication
   const handleCreate = () => {
     setLoading(true);
-    axios.post('http://localhost:5000/medications', newMedication, {
+    axios.post(`${apiBaseUrl}/medications`, newMedication, {
       headers: { Authorization: `Bearer ${token}` }
     })
     .then((res) => {
@@ -85,7 +86,7 @@ const Medications = () => {
   // Delete medication
   const handleDelete = (id) => {
     setLoading(true);
-    axios.delete(`http://localhost:5000/medications/${id}`, {
+    axios.delete(`${apiBaseUrl}/medications/${id}`, {
       headers: { Authorization: `Bearer ${token}` }
     })
     .then(() => {
@@ -103,7 +104,7 @@ const Medications = () => {
   // Update medication
   const handleUpdate = (id) => {
     setLoading(true);
-    axios.put(`http://localhost:5000/medications/${id}`, newMedication, {
+    axios.put(`${apiBaseUrl}/medications/${id}`, newMedication, {
       headers: { Authorization: `Bearer ${token}` }
     })
     .then((res) => {
