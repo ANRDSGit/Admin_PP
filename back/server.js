@@ -308,6 +308,6 @@ app.delete('/medications/:id', authenticateToken, async (req, res) => {
 });
 
 // Start the server
-app.listen(5000, () => {
+app.listen(10000, () => {
   console.log('Backend running on port 5000');
 });
