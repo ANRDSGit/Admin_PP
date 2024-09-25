@@ -55,6 +55,18 @@ const App = () => {
     });
   };
 
+  // Add fingerprint
+  const handleAddFingerpint = (id) => {
+    // axios.get(`${apiBaseUrl}/patients/${id}`, {
+    //   headers: { Authorization: `Bearer ${token}` }
+    // })
+    // .then((res) => {
+    //   setPatientId(res.data.)
+    // const payload = {
+    //   DeviceMode:"signup",
+    // axios.post(`${apiBaseUrl}/patients/${id}/fingerprint`, )
+  }
+
   // Search patients
   const handleSearch = () => {
     setLoading(true);
@@ -248,7 +260,7 @@ const App = () => {
               {
                 field: 'actions',
                 headerName: 'Actions',
-                width: 200,
+                width: 500,
                 renderCell: (params) => (
                   <>
                     {editingPatient === params.row.id ? (
@@ -275,6 +287,14 @@ const App = () => {
                       sx={{ ml: 1 }}
                     >
                       Delete
+                    </Button>
+                    <Button
+                      variant="contained"
+                      color="secondary"
+                      onClick={() => handleAddFingerpint(params.row.id)}
+                      sx={{ ml: 1 }}
+                    >
+                      Add Fingerprint
                     </Button>
                   </>
                 ),

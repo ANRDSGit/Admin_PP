@@ -21,6 +21,64 @@ app.use(cors(corsOptions));
 // Connect to MongoDB
 mongoose.connect('mongodb+srv://anrds:1234@cluster0.iowtq.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0');
 
+const { initializeApp } = require("firebase/app");
+const { getDatabase } = require("firebase/database");
+const { ref, set, onValue, update } = require("firebase/database");
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDk8LtduJ4mXqxmmwz0nQ2YySaWHepA0a8",
+  authDomain: "patientpulse-e29f3.firebaseapp.com",
+  databaseURL: "https://patientpulse-e29f3-default-rtdb.firebaseio.com",
+  projectId: "patientpulse-e29f3",
+  storageBucket: "patientpulse-e29f3.appspot.com",
+  messagingSenderId: "435646006570",
+  appId: "1:435646006570:web:caaf6313fd84da3949ca53",
+  measurementId: "G-DE74989ZE5",
+};
+
+const appDb = initializeApp(firebaseConfig);
+
+const database = getDatabase(appDb);
+
+app.post("/addFingerprintData", (req, res) => {
+  const { DeviceMode, FingerPrintCount, GetUser } = req.body;
+
+  // Set the data structure in Firebase
+  update(ref(database, "/"), {
+    DeviceMode,
+    FingerPrintCount,
+    GetUser,
+  })
+    .then(() => {
+      res.status(200).send("Data added successfully!");
+    })
+    .catch((error) => {
+      res.status(500).send("Error adding data: " + error.message);
+    });
+});
+
+app.get("/getFingerprintData", (req, res) => {
+  try {
+    const starCountRef = ref(database, "/catchUserId");
+
+    onValue(
+      starCountRef,
+      (snapshot) => {
+        const data = snapshot.val();
+        res.status(200).send({
+          message: "Data retrieved successfully!",
+          data: data,
+        });
+      },
+      {
+        onlyOnce: true,
+      }
+    );
+  } catch (error) {
+    res.status(500).send("Error getting data: " + error.message);
+  }
+});
+
 // Define Admin Schema
 const adminSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
@@ -128,6 +186,8 @@ app.delete('/patients/:id', authenticateToken, async (req, res) => {
   await Patient.findByIdAndDelete(req.params.id);
   res.send({ message: 'Patient deleted' });
 });
+
+
 
 // Define Appointment Schema
 const appointmentSchema = new mongoose.Schema({
