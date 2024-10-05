@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Box, Typography, Button, TextField, CircularProgress, Grid } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
+import { motion } from 'framer-motion';
 
 const Medications = () => {
   const [medications, setMedications] = useState([]);
@@ -14,8 +15,23 @@ const Medications = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [notes, setNotes] = useState(''); // Medical Notepad state
   const token = localStorage.getItem('token'); // Retrieve token from localStorage or other secure storage
   const apiBaseUrl = process.env.REACT_APP_API_BASE_URL;
+
+  // Fetch notes from localStorage when component mounts
+  useEffect(() => {
+    const savedNotes = localStorage.getItem('medicalNotes');
+    if (savedNotes) {
+      setNotes(savedNotes);
+    }
+  }, []);
+
+  // Save notes to localStorage
+  const handleSaveNotes = () => {
+    localStorage.setItem('medicalNotes', notes);
+    alert('Notes saved!');
+  };
 
   // Fetch all medications
   useEffect(() => {
@@ -126,136 +142,182 @@ const Medications = () => {
 
   return (
     <Box p={2} sx={{ maxWidth: '1200px', margin: '0 auto' }}>
-      <Typography variant="h4" mb={2} align="center">Medications Dashboard</Typography>
+      <motion.div initial={{ opacity: 0, y: -50 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
+        <Typography variant="h4" mb={2} align="center">Medications Dashboard</Typography>
+      </motion.div>
 
       {/* Error message */}
-      {error && <Typography color="error" mb={2}>{error}</Typography>}
+      {error && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
+          <Typography color="error" mb={2}>{error}</Typography>
+        </motion.div>
+      )}
 
       {/* Loading indicator */}
-      {loading && <Box display="flex" justifyContent="center" mb={2}><CircularProgress /></Box>}
+      {loading && (
+        <Box display="flex" justifyContent="center" mb={2}>
+          <CircularProgress />
+        </Box>
+      )}
 
       {/* Search bar */}
-      <Box mb={3}>
-        <Grid container spacing={2}>
-          <Grid item xs={12} md={9}>
-            <TextField
-              label="Search by Medication Name"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              fullWidth
-            />
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.8 }}>
+        <Box mb={3}>
+          <Grid container spacing={2}>
+            <Grid item xs={12} md={9}>
+              <TextField
+                label="Search by Medication Name"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                fullWidth
+              />
+            </Grid>
+            <Grid item xs={12} md={3}>
+              <Button
+                variant="contained"
+                color="primary"
+                fullWidth
+                onClick={handleSearch}
+                sx={{ height: '100%' }}
+              >
+                Search
+              </Button>
+            </Grid>
           </Grid>
-          <Grid item xs={12} md={3}>
-            <Button
-              variant="contained"
-              color="primary"
-              fullWidth
-              onClick={handleSearch}
-              sx={{ height: '100%' }}
-            >
-              Search
-            </Button>
-          </Grid>
-        </Grid>
-      </Box>
+        </Box>
+      </motion.div>
 
       {/* Form to add or update medication */}
-      <Box mb={3}>
-        <Grid container spacing={2}>
-          <Grid item xs={12} md={3}>
-            <TextField
-              label="Medication Name"
-              value={newMedication.name}
-              onChange={(e) => setNewMedication({ ...newMedication, name: e.target.value })}
-              fullWidth
-            />
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.8 }}>
+        <Box mb={3}>
+          <Grid container spacing={2}>
+            <Grid item xs={12} md={3}>
+              <TextField
+                label="Medication Name"
+                value={newMedication.name}
+                onChange={(e) => setNewMedication({ ...newMedication, name: e.target.value })}
+                fullWidth
+              />
+            </Grid>
+            <Grid item xs={12} md={3}>
+              <TextField
+                label="Price"
+                type="number"
+                value={newMedication.price}
+                onChange={(e) => setNewMedication({ ...newMedication, price: e.target.value })}
+                fullWidth
+              />
+            </Grid>
+            <Grid item xs={12} md={3}>
+              <TextField
+                label="Quantity"
+                type="number"
+                value={newMedication.quantity}
+                onChange={(e) => setNewMedication({ ...newMedication, quantity: e.target.value })}
+                fullWidth
+              />
+            </Grid>
+            <Grid item xs={12} md={3}>
+              <TextField
+                label="Image URL"
+                value={newMedication.imageUrl}
+                onChange={(e) => setNewMedication({ ...newMedication, imageUrl: e.target.value })}
+                fullWidth
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  fullWidth
+                  onClick={handleCreate}
+                >
+                  Add Medication
+                </Button>
+              </motion.div>
+            </Grid>
           </Grid>
-          <Grid item xs={12} md={3}>
-            <TextField
-              label="Price"
-              type="number"
-              value={newMedication.price}
-              onChange={(e) => setNewMedication({ ...newMedication, price: e.target.value })}
-              fullWidth
-            />
-          </Grid>
-          <Grid item xs={12} md={3}>
-            <TextField
-              label="Quantity"
-              type="number"
-              value={newMedication.quantity}
-              onChange={(e) => setNewMedication({ ...newMedication, quantity: e.target.value })}
-              fullWidth
-            />
-          </Grid>
-          <Grid item xs={12} md={3}>
-            <TextField
-              label="Image URL"
-              value={newMedication.imageUrl}
-              onChange={(e) => setNewMedication({ ...newMedication, imageUrl: e.target.value })}
-              fullWidth
-            />
-          </Grid>
-          <Grid item xs={12}>
-            <Button
-              variant="contained"
-              color="primary"
-              fullWidth
-              onClick={handleCreate}
-            >
-              Add Medication
-            </Button>
-          </Grid>
-        </Grid>
-      </Box>
+        </Box>
+      </motion.div>
 
       {/* Medications table */}
-      <Box height={400} mb={3}>
-        <DataGrid
-          rows={medications.map((medication) => ({
-            ...medication,
-            id: medication._id,
-          }))}
-          columns={[
-            { field: 'name', headerName: 'Name', width: 150 },
-            { field: 'price', headerName: 'Price', width: 100 },
-            { field: 'quantity', headerName: 'Quantity', width: 100 },
-            {
-              field: 'imageUrl',
-              headerName: 'Image',
-              width: 150,
-              renderCell: (params) => (
-                <img src={params.value} alt={params.row.name} style={{ height: 50 }} />
-              ),
-            },
-            {
-              field: 'actions',
-              headerName: 'Actions',
-              width: 250,
-              renderCell: (params) => (
-                <>
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    onClick={() => handleUpdate(params.row.id)}
-                    style={{ marginRight: '10px' }}
-                  >
-                    Update
-                  </Button>
-                  <Button
-                    variant="contained"
-                    color="secondary"
-                    onClick={() => handleDelete(params.row.id)}
-                  >
-                    Delete
-                  </Button>
-                </>
-              ),
-            },
-          ]}
-          pageSize={5}
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1 }}>
+        <Box height={400} mb={3}>
+          <DataGrid
+            rows={medications.map((medication) => ({
+              ...medication,
+              id: medication._id,
+            }))}
+            columns={[
+              { field: 'name', headerName: 'Name', width: 150 },
+              { field: 'price', headerName: 'Price', width: 100 },
+              { field: 'quantity', headerName: 'Quantity', width: 100 },
+              {
+                field: 'imageUrl',
+                headerName: 'Image',
+                width: 150,
+                renderCell: (params) => (
+                  <motion.div whileHover={{ scale: 1.1 }}>
+                    <img src={params.value} alt={params.row.name} style={{ height: 50 }} />
+                  </motion.div>
+                ),
+              },
+              {
+                field: 'actions',
+                headerName: 'Actions',
+                width: 250,
+                renderCell: (params) => (
+                  <>
+                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        onClick={() => handleUpdate(params.row.id)}
+                        style={{ marginRight: '10px' }}
+                      >
+                        Update
+                      </Button>
+                    </motion.div>
+                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                      <Button
+                        variant="contained"
+                        color="secondary"
+                        onClick={() => handleDelete(params.row.id)}
+                      >
+                        Delete
+                      </Button>
+                    </motion.div>
+                  </>
+                ),
+              },
+            ]}
+            pageSize={5}
+          />
+        </Box>
+      </motion.div>
+
+      {/* Medical Notepad */}
+      <motion.div initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
+        <Typography variant="h5" mb={2}>Medical Notepad</Typography>
+        <TextField
+          label="Notes"
+          multiline
+          rows={4}
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          fullWidth
+          variant="outlined"
         />
-      </Box>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={handleSaveNotes}
+          sx={{ marginTop: '10px' }}
+        >
+          Save Notes
+        </Button>
+      </motion.div>
     </Box>
   );
 };

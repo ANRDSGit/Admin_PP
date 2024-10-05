@@ -3,6 +3,7 @@ import { BrowserRouter as Router } from 'react-router-dom';
 import NavigationBar from './components/Navbar';
 import AppRoutes from './components/AppRoutes'; // Import the new child component
 import Loading from './components/Loading';  // Import the Loading component
+import home from './components/home';  // Import the home component
 
 const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);

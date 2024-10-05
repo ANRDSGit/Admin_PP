@@ -1,34 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import {
-  AppBar,
-  Toolbar,
-  Typography,
-  Button,
-  IconButton,
-  Drawer,
-  List,
-  ListItem,
-  ListItemText,
-  Box,
-  Menu,
-  MenuItem,
-  Badge,
-  useMediaQuery,
-  useTheme
-} from '@mui/material';
+import { AppBar, Toolbar, Typography, Button, IconButton, Drawer, List, ListItem, ListItemText, Box, useMediaQuery, useTheme } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
-import NotificationsIcon from '@mui/icons-material/Notifications';
 
 const NavigationBar = ({ isAuthenticated, onLogout }) => {
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [anchorEl, setAnchorEl] = useState(null); // For notifications menu
-  const [notifications, setNotifications] = useState([
-    'New message from Doctor Smith',
-    'Appointment reminder for tomorrow',
-    'New lab results available'
-  ]); // Example notifications
-  const [currentDateTime, setCurrentDateTime] = useState(new Date());
+  const [currentDateTime, setCurrentDateTime] = useState(new Date()); // State for live date and time
   const navigate = useNavigate();
   const location = useLocation();
   const theme = useTheme();
@@ -47,14 +24,6 @@ const NavigationBar = ({ isAuthenticated, onLogout }) => {
 
   const toggleDrawer = (open) => () => {
     setDrawerOpen(open);
-  };
-
-  const handleNotificationClick = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleNotificationClose = () => {
-    setAnchorEl(null);
   };
 
   const drawerContent = (
@@ -110,9 +79,9 @@ const NavigationBar = ({ isAuthenticated, onLogout }) => {
   useEffect(() => {
     const intervalId = setInterval(() => {
       setCurrentDateTime(new Date());
-    }, 1000);
+    }, 1000); // Update every second
 
-    return () => clearInterval(intervalId);
+    return () => clearInterval(intervalId); // Cleanup interval on component unmount
   }, []);
 
   return (
@@ -143,45 +112,17 @@ const NavigationBar = ({ isAuthenticated, onLogout }) => {
             {/* Live Date and Time in a Box */}
             <Box
               sx={{
-                border: 'none',
-                borderRadius: '5px',
-                padding: '0.5rem',
-                marginRight: '1rem',
-                backgroundColor: '#00AE48FF',
+                border: 'none', // Border around the box
+                borderRadius: '5px', // Rounded corners
+                padding: '0.5rem', // Padding inside the box
+                marginRight: '1rem', // Space to the right
+                backgroundColor: '#00AE48FF', // Optional: light background
               }}
             >
               <Typography variant="body2">
                 {currentDateTime.toLocaleDateString()} {currentDateTime.toLocaleTimeString()}
               </Typography>
             </Box>
-
-            {/* Notification Icon with Badge */}
-            <IconButton
-              color="inherit"
-              onClick={handleNotificationClick}
-              sx={{ marginRight: '1rem' }}
-            >
-              <Badge badgeContent={notifications.length} color="error">
-                <NotificationsIcon />
-              </Badge>
-            </IconButton>
-
-            {/* Notification Menu */}
-            <Menu
-              anchorEl={anchorEl}
-              open={Boolean(anchorEl)}
-              onClose={handleNotificationClose}
-            >
-              {notifications.length > 0 ? (
-                notifications.map((notification, index) => (
-                  <MenuItem key={index} onClick={handleNotificationClose}>
-                    {notification}
-                  </MenuItem>
-                ))
-              ) : (
-                <MenuItem onClick={handleNotificationClose}>No new notifications</MenuItem>
-              )}
-            </Menu>
 
             {isAuthenticated ? (
               <>
