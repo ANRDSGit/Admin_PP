@@ -137,7 +137,7 @@ const NavigationBar = ({ isAuthenticated, onLogout }) => {
         ) : (
           <>
             <Typography variant="h6" style={{ flexGrow: 1 }}>
-              My Application
+              Patient Pulse
             </Typography>
 
             {/* Live Date and Time in a Box */}

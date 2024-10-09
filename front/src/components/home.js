@@ -43,7 +43,8 @@ const Home = () => {
     <Box sx={{ padding: '2rem' }}>
       <Typography variant="h4" gutterBottom>
         Admin Dashboard
-      </Typography>
+      </Typography>y
+      
 
       <Grid container spacing={3}>
         {/* Patients Overview Card */}
