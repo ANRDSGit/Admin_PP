@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Grid, Paper, Typography, Box, Button, List, ListItem, ListItemText } from '@mui/material';
 import { Bar, Pie } from 'react-chartjs-2'; // Import Bar and Pie charts
 import { Link } from 'react-router-dom';
@@ -8,6 +9,7 @@ import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, ArcEle
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, ArcElement, Tooltip, Legend);
 
 const Home = () => {
+  const navigate = useNavigate();
   // Sample data for the Bar chart
   const appointmentData = {
     labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
@@ -43,7 +45,7 @@ const Home = () => {
     <Box sx={{ padding: '2rem' }}>
       <Typography variant="h4" gutterBottom>
         Admin Dashboard
-      </Typography>y
+      </Typography>
       
 
       <Grid container spacing={3}>

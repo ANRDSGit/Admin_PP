@@ -5,6 +5,7 @@ import Appointments from './Appointments';
 import Medication from './Medications';
 import AdminLogin from './AdminLogin';
 import Loading from './Loading';  // Import the Loading component
+import Home from './home';  // Import the Loading component
 
 const AppRoutes = ({ isAuthenticated }) => {
   const [pageLoading, setPageLoading] = useState(false); // Add loading state for page transitions
@@ -29,6 +30,7 @@ const AppRoutes = ({ isAuthenticated }) => {
       <Route path="/patients" element={isAuthenticated ? <Patients /> : <Navigate to="/login" replace />} />
       <Route path="/appointments" element={isAuthenticated ? <Appointments /> : <Navigate to="/login" replace />} />
       <Route path="/medications" element={isAuthenticated ? <Medication /> : <Navigate to="/login" replace />} />
+      <Route path="/home" element={isAuthenticated ? <Home /> : <Navigate to="/login" replace />} />
       <Route path="/" element={<Navigate to={isAuthenticated ? "/appointments" : "/login"} replace />} />
     </Routes>
   );

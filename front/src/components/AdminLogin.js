@@ -28,7 +28,7 @@ const AdminLogin = () => {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
-      navigate('/appointments');
+      navigate('/home');
     }
   }, [navigate]);
 
@@ -36,7 +36,7 @@ const AdminLogin = () => {
     axios.post(`${apiBaseUrl}/admin/login`, { username, password })
       .then((response) => {
         localStorage.setItem('token', response.data.token);
-        navigate('/appointments');
+        navigate('/home');
         window.location.reload();
       })
       .catch((err) => {

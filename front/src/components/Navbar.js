@@ -64,6 +64,15 @@ const NavigationBar = ({ isAuthenticated, onLogout }) => {
           <ListItem
             button
             component={Link}
+            to="/home"
+            onClick={toggleDrawer(false)}
+            style={location.pathname === '/home' ? { backgroundColor: '#f0f0f0' } : {}}
+          >
+            <ListItemText primary="Home" />
+          </ListItem>
+          <ListItem
+            button
+            component={Link}
             to="/patients"
             onClick={toggleDrawer(false)}
             style={location.pathname === '/patients' ? { backgroundColor: '#f0f0f0' } : {}}
@@ -185,6 +194,9 @@ const NavigationBar = ({ isAuthenticated, onLogout }) => {
 
             {isAuthenticated ? (
               <>
+                <Button color="inherit" component={Link} to="/home" style={getLinkStyle('/home')}>
+                  Dashboard
+                </Button>
                 <Button color="inherit" component={Link} to="/patients" style={getLinkStyle('/patients')}>
                   Patients
                 </Button>
