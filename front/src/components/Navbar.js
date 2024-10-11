@@ -203,7 +203,7 @@ const NavigationBar = ({ isAuthenticated, onLogout }) => {
                 <Button color="inherit" component={Link} to="/appointments" style={getLinkStyle('/appointments')}>
                   Appointments
                 </Button>
-                <Button color="inherit" component={Link} to="/medications" style={getLinkStyle('/medications')}>
+                <Button color="inherit" onClick={() => window.location.href = 'http://localhost:5173/'}>
                   Medications
                 </Button>
                 <Button color="inherit" onClick={handleLogout}>
