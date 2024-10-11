@@ -322,37 +322,57 @@ const Appointments = () => {
       </Tabs>
 
       <Box sx={{ mt: 2 }}>
-        {loading ? <CircularProgress /> : (
-          <DataGrid
-            rows={tabIndex === 0 ? physicalAppointments : remoteAppointments}
-            columns={[
-              { field: 'patientName', headerName: 'Patient Name', width: 200 },
-              { field: 'date', headerName: 'Date', width: 150 },
-              { field: 'time', headerName: 'Time', width: 100 },
-              { field: 'appointmentType', headerName: 'Type', width: 150 },
-              {
-                field: 'actions', headerName: 'Actions', width: 200, renderCell: (params) => (
-                  <div className={classes.centerCell}>
-                    <Button variant="contained" color="primary" onClick={() => handleEdit(params.row)}>
-                      Edit
-                    </Button>
-                    <Button variant="contained" color="secondary" onClick={() => handleDelete(params.row._id)}>
-                      Delete
-                    </Button>
-                    <Button variant="contained" color="secondary" onClick={() => window.location.href = 'https://video-convo-one.vercel.app/create1on1'}>
-                      Conference
-                    </Button>
-                  </div>
-                )
-              }
-            ]}
-            getRowId={(row) => row._id} // Use `_id` as the unique identifier for each row
-            autoHeight
-            pageSize={5}
-            rowsPerPageOptions={[5]}
-          />
-        )}
-      </Box>
+  {loading ? (
+    <CircularProgress />
+  ) : (
+    <DataGrid
+      rows={tabIndex === 0 ? physicalAppointments : remoteAppointments}
+      columns={[
+        { field: 'patientName', headerName: 'Patient Name', width: 200 },
+        { field: 'date', headerName: 'Date', width: 150 },
+        { field: 'time', headerName: 'Time', width: 100 },
+        { field: 'appointmentType', headerName: 'Type', width: 150 },
+        {
+          field: 'actions',
+          headerName: 'Actions',
+          width: 200,
+          renderCell: (params) => (
+            <div className={classes.centerCell}>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={() => handleEdit(params.row)}
+              >
+                Edit
+              </Button>
+              <Button
+                variant="contained"
+                color="secondary"
+                onClick={() => handleDelete(params.row._id)}
+              >
+                Delete
+              </Button>
+              {tabIndex === 1 && ( // Only show Conference button for remote appointments
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  onClick={() => window.location.href = 'https://video-convo-one.vercel.app/create1on1'}
+                >
+                  Conference
+                </Button>
+              )}
+            </div>
+          ),
+        },
+      ]}
+      getRowId={(row) => row._id} // Use `_id` as the unique identifier for each row
+      autoHeight
+      pageSize={5}
+      rowsPerPageOptions={[5]}
+    />
+  )}
+</Box>
+
 
       {/* Snackbar for success messages */}
       <Snackbar
