@@ -339,7 +339,7 @@ const Appointments = () => {
                     <Button variant="contained" color="secondary" onClick={() => handleDelete(params.row._id)}>
                       Delete
                     </Button>
-                    <Button color="inherit" onClick={() => window.location.href = 'https://video-convo-one.vercel.app/create1on1'}>
+                    <Button variant="contained" color="secondary" onClick={() => window.location.href = 'https://video-convo-one.vercel.app/create1on1'}>
                       Conference
                     </Button>
                   </div>
