@@ -330,16 +330,21 @@ const Appointments = () => {
               { field: 'date', headerName: 'Date', width: 150 },
               { field: 'time', headerName: 'Time', width: 100 },
               { field: 'appointmentType', headerName: 'Type', width: 150 },
-              { field: 'actions', headerName: 'Actions', width: 200, renderCell: (params) => (
-                <div className={classes.centerCell}>
-                  <Button variant="contained" color="primary" onClick={() => handleEdit(params.row)}>
-                    Edit
-                  </Button>
-                  <Button variant="contained" color="secondary" onClick={() => handleDelete(params.row._id)}>
-                    Delete
-                  </Button>
-                </div>
-              )}
+              {
+                field: 'actions', headerName: 'Actions', width: 200, renderCell: (params) => (
+                  <div className={classes.centerCell}>
+                    <Button variant="contained" color="primary" onClick={() => handleEdit(params.row)}>
+                      Edit
+                    </Button>
+                    <Button variant="contained" color="secondary" onClick={() => handleDelete(params.row._id)}>
+                      Delete
+                    </Button>
+                    <Button color="inherit" onClick={() => window.location.href = 'https://video-convo-one.vercel.app/create1on1'}>
+                      Conference
+                    </Button>
+                  </div>
+                )
+              }
             ]}
             getRowId={(row) => row._id} // Use `_id` as the unique identifier for each row
             autoHeight
