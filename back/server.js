@@ -154,7 +154,7 @@ const Patient = mongoose.model('Patient', patientSchema);
 // Routes for CRUD operations (protected)
 app.post('/patients', authenticateToken, async (req, res) => {
   try {
-    const { name, age, gender, bloodGroup, email, password } = req.body;
+    const { name, age, gender, bloodGroup,number, email, password } = req.body;
     console.log("Received data:", req.body); // Log the request body for debugging
 
     // Check if email already exists

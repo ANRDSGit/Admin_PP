@@ -37,14 +37,20 @@ const App = () => {
   const handleCreate = () => {
     setLoading(true);
     axios.post(`${apiBaseUrl}/patients`, {
-      ...newPatient,
+      name: newPatient.name,
       age: Number(newPatient.age),
+      gender: newPatient.gender,
+      bloodGroup: newPatient.bloodGroup,
+      email: newPatient.email,  // Include email in the payload
+      number: newPatient.number, // Include number in the payload
+      password: newPatient.password,
     }, {
       headers: { Authorization: `Bearer ${token}` }
     })
     .then((res) => {
       setPatients([...patients, res.data.patient]);
-      setNewPatient({ name: '', age: '', gender: '', bloodGroup: '',number:'', email: '', password: '' }); // Reset form
+      // Reset form
+      setNewPatient({ name: '', age: '', gender: '', bloodGroup: '', number: '', email: '', password: '' });
     })
     .catch((err) => {
       setError('Error creating patient');
@@ -54,6 +60,7 @@ const App = () => {
       setLoading(false);
     });
   };
+  
 
   // Search patients
   const handleSearch = () => {
