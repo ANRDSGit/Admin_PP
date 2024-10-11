@@ -6,13 +6,13 @@ import 'react-toastify/dist/ReactToastify.css';
 
 const App = () => {
   const [patients, setPatients] = useState([]);
-  const [newPatient, setNewPatient] = useState({ name: '', age: '', gender: '', bloodGroup: '', password: '' });
+  const [newPatient, setNewPatient] = useState({ name: '', age: '', gender: '', bloodGroup: '', email: '', password: '' }); // Added email field
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [editingPatient, setEditingPatient] = useState(null);
-  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false); // Dialog state
-  const [patientToDelete, setPatientToDelete] = useState(null); // Track which patient to delete
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [patientToDelete, setPatientToDelete] = useState(null);
   const token = localStorage.getItem('token');
   const apiBaseUrl = process.env.REACT_APP_API_BASE_URL;
 
@@ -44,7 +44,7 @@ const App = () => {
     })
     .then((res) => {
       setPatients([...patients, res.data.patient]);
-      setNewPatient({ name: '', age: '', gender: '', bloodGroup: '', password: '' }); // Reset form
+      setNewPatient({ name: '', age: '', gender: '', bloodGroup: '',number:'', email: '', password: '' }); // Reset form
     })
     .catch((err) => {
       setError('Error creating patient');
@@ -54,18 +54,6 @@ const App = () => {
       setLoading(false);
     });
   };
-
-  // Add fingerprint
-  const handleAddFingerpint = (id) => {
-    // axios.get(`${apiBaseUrl}/patients/${id}`, {
-    //   headers: { Authorization: `Bearer ${token}` }
-    // })
-    // .then((res) => {
-    //   setPatientId(res.data.)
-    // const payload = {
-    //   DeviceMode:"signup",
-    // axios.post(`${apiBaseUrl}/patients/${id}/fingerprint`, )
-  }
 
   // Search patients
   const handleSearch = () => {
@@ -207,6 +195,26 @@ const App = () => {
               </Select>
             </FormControl>
           </Grid>
+          <Grid item xs={12} md={4}>
+            <TextField
+              label="Email"
+              type="email"
+              value={newPatient.email}
+              onChange={(e) => setNewPatient({ ...newPatient, email: e.target.value })}
+              fullWidth
+            />
+          </Grid>
+
+          <Grid item xs={12} md={4}>
+            <TextField
+              label="Number"
+              type="number"
+              value={newPatient.number}
+              onChange={(e) => setNewPatient({ ...newPatient, number: e.target.value })}
+              fullWidth
+            />
+          </Grid>
+
           <Grid item xs={12} md={2}>
             <TextField
               label="Password"
@@ -249,83 +257,55 @@ const App = () => {
                           p._id === params.row.id ? { ...p, age: e.target.value } : p
                         ))
                       }
+                      onBlur={() => handleAgeUpdate(params.row.id, params.row.age)}
+                      fullWidth
                     />
                   ) : (
-                    params.row.age
+                    <span onClick={() => setEditingPatient(params.row.id)}>{params.value}</span>
                   );
                 },
               },
               { field: 'gender', headerName: 'Gender', width: 100 },
-              { field: 'bloodGroup', headerName: 'Blood Group', width: 120 },
+              { field: 'bloodGroup', headerName: 'Blood Group', width: 100 },
+              { field: 'email', headerName: 'Email', width: 150 }, // Added email field in table
+              { field: 'number', headerName: 'Number', width: 150 }, 
               {
-                field: 'actions',
+                field: 'delete',
                 headerName: 'Actions',
-                width: 500,
+                width: 150,
                 renderCell: (params) => (
-                  <>
-                    {editingPatient === params.row.id ? (
-                      <Button
-                        variant="contained"
-                        color="primary"
-                        onClick={() => handleAgeUpdate(params.row.id, params.row.age)}
-                      >
-                        Save
-                      </Button>
-                    ) : (
-                      <Button
-                        variant="contained"
-                        color="secondary"
-                        onClick={() => setEditingPatient(params.row.id)}
-                      >
-                        Edit
-                      </Button>
-                    )}
-                    <Button
-                      variant="contained"
-                      color="secondary"
-                      onClick={() => handleDeleteConfirmation(params.row.id)}
-                      sx={{ ml: 1 }}
-                    >
-                      Delete
-                    </Button>
-                    <Button
-                      variant="contained"
-                      color="secondary"
-                      onClick={() => handleAddFingerpint(params.row.id)}
-                      sx={{ ml: 1 }}
-                    >
-                      Add Fingerprint
-                    </Button>
-                  </>
+                  <Button
+                    variant="contained"
+                    color="error"
+                    onClick={() => handleDeleteConfirmation(params.row.id)}
+                  >
+                    Delete
+                  </Button>
                 ),
               },
             ]}
             pageSize={5}
             rowsPerPageOptions={[5]}
-            autoHeight
           />
         </Box>
       )}
 
-      {/* Confirmation dialog for deletion */}
-      <Dialog open={confirmDialogOpen} onClose={() => setConfirmDialogOpen(false)}>
-        <DialogTitle>Confirm Delete</DialogTitle>
+      {/* Delete confirmation dialog */}
+      <Dialog
+        open={confirmDialogOpen}
+        onClose={() => setConfirmDialogOpen(false)}
+      >
+        <DialogTitle>Delete Patient</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Are you sure you want to delete this patient? This action cannot be undone.
+            Are you sure you want to delete this patient?
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setConfirmDialogOpen(false)} color="primary">
-            Cancel
-          </Button>
-          <Button onClick={handleDelete} color="secondary">
-            Delete
-          </Button>
+          <Button onClick={() => setConfirmDialogOpen(false)}>Cancel</Button>
+          <Button color="error" onClick={handleDelete}>Delete</Button>
         </DialogActions>
       </Dialog>
-
-      {/* Toast container */}
     </Box>
   );
 };

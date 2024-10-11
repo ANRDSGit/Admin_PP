@@ -142,27 +142,42 @@ const patientSchema = new mongoose.Schema({
   age: { type: Number, required: true },
   gender: { type: String, required: true },
   bloodGroup: { type: String, required: true },
+  number: { type: Number, required: true },  // Added number field
+  email: { type: String, required: true, unique: true },  // Added email field
   password: { type: String, required: true },
   createdAt: { type: Date, default: Date.now },
 });
 
 const Patient = mongoose.model('Patient', patientSchema);
 
+
 // Routes for CRUD operations (protected)
 app.post('/patients', authenticateToken, async (req, res) => {
   try {
-    const { name, age, gender, bloodGroup, password } = req.body;
+    const { name, age, gender, bloodGroup, email, password } = req.body;
+    console.log("Received data:", req.body); // Log the request body for debugging
+
+    // Check if email already exists
+    const existingPatient = await Patient.findOne({ email });
+    if (existingPatient) {
+      return res.status(400).json({ message: 'Email already exists' });
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
     const newPatient = new Patient({
       name,
       age,
       gender,
       bloodGroup,
+      number,  // Ensure the number is being included here
+      email,  // Ensure the email is being included here
       password: hashedPassword,
     });
+
     await newPatient.save();
     res.status(201).json({ message: 'Patient registered successfully', patient: newPatient });
   } catch (error) {
+    console.error("Error registering patient:", error); // Log the error for debugging
     res.status(500).json({ error: 'Error registering patient' });
   }
 });
@@ -178,7 +193,15 @@ app.get('/patients/search/:name', authenticateToken, async (req, res) => {
 });
 
 app.put('/patients/:id', authenticateToken, async (req, res) => {
-  const patient = await Patient.findByIdAndUpdate(req.params.id, req.body, { new: true });
+  const { email, name, age, gender, bloodGroup } = req.body;
+
+  // Check if email already exists for another patient
+  const existingPatient = await Patient.findOne({ email, _id: { $ne: req.params.id } });
+  if (existingPatient) {
+    return res.status(400).json({ message: 'Email already in use' });
+  }
+
+  const patient = await Patient.findByIdAndUpdate(req.params.id, { email, name, age, gender, bloodGroup }, { new: true });
   res.send(patient);
 });
 

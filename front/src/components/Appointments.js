@@ -3,9 +3,34 @@ import axios from 'axios';
 import { DataGrid } from '@mui/x-data-grid';
 import { Box, Typography, Button, TextField, CircularProgress, MenuItem, Paper, Grid, Tabs, Tab, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Snackbar } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import debounce from 'lodash.debounce'; 
+import debounce from 'lodash.debounce';
+import { makeStyles } from '@mui/styles';
+
+// Define a styles object
+const useStyles = makeStyles(() => ({
+  centerCell: {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    textAlign: 'center',
+  },
+}));
 
 const Appointments = () => {
+  const classes = useStyles();
+  const token = localStorage.getItem('token');
+  const navigate = useNavigate();
+  const apiBaseUrl = process.env.REACT_APP_API_BASE_URL;
+
+  // Function to get today's date in the format YYYY-MM-DD
+  const getTodayDate = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const [appointments, setAppointments] = useState([]);
   const [newAppointment, setNewAppointment] = useState({
     patientName: '',
@@ -14,20 +39,18 @@ const Appointments = () => {
     appointmentType: 'physical',
   });
   const [patients, setPatients] = useState([]);
-  const [updateAppointment, setUpdateAppointment] = useState(null);  
+  const [updateAppointment, setUpdateAppointment] = useState(null);
   const [editedAppointment, setEditedAppointment] = useState({});
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [tabIndex, setTabIndex] = useState(0);
-  const [openDialog, setOpenDialog] = useState(false);  
-  const [deletingAppointment, setDeletingAppointment] = useState(null);  
+  const [openDialog, setOpenDialog] = useState(false);
+  const [deletingAppointment, setDeletingAppointment] = useState(null);
   const [openEditDialog, setOpenEditDialog] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');  
-  const [remoteLink, setRemoteLink] = useState('');  // Shared link input
-  const token = localStorage.getItem('token');
-  const navigate = useNavigate();
-  const apiBaseUrl = process.env.REACT_APP_API_BASE_URL;
+  const [successMessage, setSuccessMessage] = useState('');
+  const [remoteLink, setRemoteLink] = useState(''); // Shared link input
+  const [selectedDate, setSelectedDate] = useState(getTodayDate()); // Date for filtering appointments
 
   // Fetch all appointments and patients
   const fetchAllData = async () => {
@@ -55,22 +78,23 @@ const Appointments = () => {
     fetchAllData();
   }, [token, apiBaseUrl]);
 
+  // Debounced search for appointments by patient name
   const debouncedSearch = useCallback(
     debounce((term) => {
       setLoading(true);
       axios.get(`${apiBaseUrl}/appointments/search/${term}`, {
         headers: { Authorization: `Bearer ${token}` }
       })
-      .then((res) => {
-        setAppointments(res.data);
-      })
-      .catch((err) => {
-        setError('Error searching appointments');
-        console.error(err);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+        .then((res) => {
+          setAppointments(res.data);
+        })
+        .catch((err) => {
+          setError('Error searching appointments');
+          console.error(err);
+        })
+        .finally(() => {
+          setLoading(false);
+        });
     }, 500),
     [token, apiBaseUrl]
   );
@@ -132,7 +156,7 @@ const Appointments = () => {
       time: appointment.time,
       appointmentType: appointment.appointmentType
     });
-    setOpenEditDialog(true);  
+    setOpenEditDialog(true);
   };
 
   const handleUpdate = async () => {
@@ -176,14 +200,29 @@ const Appointments = () => {
 
   const handleCloseSnackbar = () => setSuccessMessage('');
 
-  const physicalAppointments = useMemo(
-    () => appointments.filter((apt) => apt.appointmentType === 'physical'),
-    [appointments]
-  );
-  const remoteAppointments = useMemo(
-    () => appointments.filter((apt) => apt.appointmentType === 'remote'),
-    [appointments]
-  );
+  // Physical appointments filtering logic
+  const physicalAppointments = useMemo(() => {
+    if (searchTerm) {
+      return appointments.filter((apt) =>
+        apt.appointmentType === 'physical' && apt.patientName.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    return appointments.filter((apt) =>
+      apt.appointmentType === 'physical' && new Date(apt.date).toISOString().split('T')[0] === selectedDate
+    );
+  }, [appointments, searchTerm, selectedDate]);
+
+  // Remote appointments filtering logic
+  const remoteAppointments = useMemo(() => {
+    if (searchTerm) {
+      return appointments.filter((apt) =>
+        apt.appointmentType === 'remote' && apt.patientName.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    return appointments.filter((apt) =>
+      apt.appointmentType === 'remote' && new Date(apt.date).toISOString().split('T')[0] === selectedDate
+    );
+  }, [appointments, searchTerm, selectedDate]);
 
   return (
     <Box p={2}>
@@ -201,6 +240,18 @@ const Appointments = () => {
           />
         </Grid>
       </Grid>
+
+      {/* Date Picker */}
+      <Box sx={{ mb: 2, textAlign: 'center' }}>
+        <Typography variant="h6" gutterBottom>Select Date</Typography>
+        <TextField
+          label="Select Date"
+          type="date"
+          InputLabelProps={{ shrink: true }}
+          value={selectedDate}
+          onChange={(e) => setSelectedDate(e.target.value)}
+        />
+      </Box>
 
       <Paper elevation={3} sx={{ p: 2, mb: 2 }}>
         <Typography variant="h6" gutterBottom textAlign="center">Create New Appointment</Typography>
@@ -220,27 +271,27 @@ const Appointments = () => {
               ))}
             </TextField>
           </Grid>
-          <Grid item xs={12} md={2}>
+          <Grid item xs={12} md={4}>
             <TextField
               label="Date"
               type="date"
-              InputLabelProps={{ shrink: true }}
               value={newAppointment.date}
               onChange={(e) => setNewAppointment({ ...newAppointment, date: e.target.value })}
               fullWidth
+              InputLabelProps={{ shrink: true }}
             />
           </Grid>
-          <Grid item xs={12} md={2}>
+          <Grid item xs={12} md={4}>
             <TextField
               label="Time"
               type="time"
-              InputLabelProps={{ shrink: true }}
               value={newAppointment.time}
               onChange={(e) => setNewAppointment({ ...newAppointment, time: e.target.value })}
               fullWidth
+              InputLabelProps={{ shrink: true }}
             />
           </Grid>
-          <Grid item xs={12} md={2}>
+          <Grid item xs={12} md={4}>
             <TextField
               select
               label="Appointment Type"
@@ -252,116 +303,69 @@ const Appointments = () => {
               <MenuItem value="remote">Remote</MenuItem>
             </TextField>
           </Grid>
-          <Grid item xs={12} md={2}>
-            <Button variant="contained" onClick={handleCreate} fullWidth disabled={loading}>
-              {loading ? <CircularProgress size={24} /> : 'Create'}
+          <Grid item xs={12} md={12}>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleCreate}
+              fullWidth
+            >
+              Create Appointment
             </Button>
           </Grid>
         </Grid>
       </Paper>
 
-      {/* Shared Remote Link Input */}
-      <Box sx={{ mb: 2, textAlign: 'center' }}>
-        <Typography variant="h6" gutterBottom>Remote Appointment Link</Typography>
-        <TextField
-          label="Enter remote link"
-          value={remoteLink}
-          onChange={(e) => setRemoteLink(e.target.value)}
-          fullWidth
-        />
-      </Box>
-
-      {/* Appointments Tabs */}
-      <Tabs value={tabIndex} onChange={(e, newValue) => setTabIndex(newValue)} centered>
+      <Tabs value={tabIndex} onChange={(_, index) => setTabIndex(index)} centered>
         <Tab label="Physical Appointments" />
         <Tab label="Remote Appointments" />
       </Tabs>
 
-      {loading ? (
-        <Box display="flex" justifyContent="center" mt={2}>
-          <CircularProgress />
-        </Box>
-      ) : (
-        <Paper elevation={3} sx={{ p: 2, mt: 2 }}>
-          {tabIndex === 0 ? (
-            <DataGrid
-              rows={physicalAppointments}
-              columns={[
-                { field: 'patientName', headerName: 'Patient Name', flex: 1 },
-                { field: 'date', headerName: 'Date', flex: 1 },
-                { field: 'time', headerName: 'Time', flex: 1 },
-                {
-                  field: 'actions',
-                  headerName: 'Actions',
-                  flex: 1,
-                  renderCell: (params) => (
-                    <>
-                      <Button variant="outlined" onClick={() => handleEdit(params.row)}>Edit</Button>
-                      <Button variant="outlined" color="error" onClick={() => handleDelete(params.row._id)}>Delete</Button>
-                    </>
-                  ),
-                },
-              ]}
-              getRowId={(row) => row._id}
-              autoHeight
-              pageSize={5}
-              rowsPerPageOptions={[5, 10, 15]}
-            />
-          ) : (
-            <DataGrid
-              rows={remoteAppointments}
-              columns={[
-                { field: 'patientName', headerName: 'Patient Name', flex: 1 },
-                { field: 'date', headerName: 'Date', flex: 1 },
-                { field: 'time', headerName: 'Time', flex: 1 },
-                {
-                  field: 'remoteLink',
-                  headerName: 'Remote Link',
-                  flex: 1,
-                  renderCell: (params) => (
-                    <>
-                      {params.row.remoteLink ? (
-                        <a href={params.row.remoteLink} target="_blank" rel="noopener noreferrer">Join</a>
-                      ) : (
-                        <Button variant="outlined" onClick={() => handleRedirectRemote(params.row._id)}>
-                          Save Link
-                        </Button>
-                      )}
-                    </>
-                  ),
-                },
-                {
-                  field: 'actions',
-                  headerName: 'Actions',
-                  flex: 1,
-                  renderCell: (params) => (
-                    <>
-                      <Button variant="outlined" onClick={() => handleEdit(params.row)}>Edit</Button>
-                      <Button variant="outlined" color="error" onClick={() => handleDelete(params.row._id)}>Delete</Button>
-                    </>
-                  ),
-                },
-              ]}
-              getRowId={(row) => row._id}
-              autoHeight
-              pageSize={5}
-              rowsPerPageOptions={[5, 10, 15]}
-            />
-          )}
-        </Paper>
-      )}
+      <Box sx={{ mt: 2 }}>
+        {loading ? <CircularProgress /> : (
+          <DataGrid
+            rows={tabIndex === 0 ? physicalAppointments : remoteAppointments}
+            columns={[
+              { field: 'patientName', headerName: 'Patient Name', width: 200 },
+              { field: 'date', headerName: 'Date', width: 150 },
+              { field: 'time', headerName: 'Time', width: 100 },
+              { field: 'appointmentType', headerName: 'Type', width: 150 },
+              { field: 'actions', headerName: 'Actions', width: 200, renderCell: (params) => (
+                <div className={classes.centerCell}>
+                  <Button variant="contained" color="primary" onClick={() => handleEdit(params.row)}>
+                    Edit
+                  </Button>
+                  <Button variant="contained" color="secondary" onClick={() => handleDelete(params.row._id)}>
+                    Delete
+                  </Button>
+                </div>
+              )}
+            ]}
+            getRowId={(row) => row._id} // Use `_id` as the unique identifier for each row
+            autoHeight
+            pageSize={5}
+            rowsPerPageOptions={[5]}
+          />
+        )}
+      </Box>
+
+      {/* Snackbar for success messages */}
+      <Snackbar
+        open={!!successMessage}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        message={successMessage}
+      />
 
       {/* Dialog for deleting appointment */}
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
         <DialogTitle>Confirm Delete</DialogTitle>
         <DialogContent>
-          <DialogContentText>
-            Are you sure you want to delete this appointment?
-          </DialogContentText>
+          <DialogContentText>Are you sure you want to delete this appointment?</DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
-          <Button onClick={confirmDelete} color="error">Delete</Button>
+          <Button onClick={() => setOpenDialog(false)} color="primary">Cancel</Button>
+          <Button onClick={confirmDelete} color="secondary">Delete</Button>
         </DialogActions>
       </Dialog>
 
@@ -369,55 +373,41 @@ const Appointments = () => {
       <Dialog open={openEditDialog} onClose={() => setOpenEditDialog(false)}>
         <DialogTitle>Edit Appointment</DialogTitle>
         <DialogContent>
-          <DialogContentText>Edit appointment details below:</DialogContentText>
-          <Grid container spacing={2}>
-            <Grid item xs={12}>
-              <TextField
-                label="Date"
-                type="date"
-                InputLabelProps={{ shrink: true }}
-                value={editedAppointment.date}
-                onChange={(e) => setEditedAppointment({ ...editedAppointment, date: e.target.value })}
-                fullWidth
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                label="Time"
-                type="time"
-                InputLabelProps={{ shrink: true }}
-                value={editedAppointment.time}
-                onChange={(e) => setEditedAppointment({ ...editedAppointment, time: e.target.value })}
-                fullWidth
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                select
-                label="Appointment Type"
-                value={editedAppointment.appointmentType}
-                onChange={(e) => setEditedAppointment({ ...editedAppointment, appointmentType: e.target.value })}
-                fullWidth
-              >
-                <MenuItem value="physical">Physical</MenuItem>
-                <MenuItem value="remote">Remote</MenuItem>
-              </TextField>
-            </Grid>
-          </Grid>
+          <TextField
+            label="Date"
+            type="date"
+            value={editedAppointment.date}
+            onChange={(e) => setEditedAppointment({ ...editedAppointment, date: e.target.value })}
+            fullWidth
+            InputLabelProps={{ shrink: true }}
+            margin="normal"
+          />
+          <TextField
+            label="Time"
+            type="time"
+            value={editedAppointment.time}
+            onChange={(e) => setEditedAppointment({ ...editedAppointment, time: e.target.value })}
+            fullWidth
+            InputLabelProps={{ shrink: true }}
+            margin="normal"
+          />
+          <TextField
+            select
+            label="Appointment Type"
+            value={editedAppointment.appointmentType}
+            onChange={(e) => setEditedAppointment({ ...editedAppointment, appointmentType: e.target.value })}
+            fullWidth
+            margin="normal"
+          >
+            <MenuItem value="physical">Physical</MenuItem>
+            <MenuItem value="remote">Remote</MenuItem>
+          </TextField>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenEditDialog(false)}>Cancel</Button>
-          <Button onClick={handleUpdate}>Update</Button>
+          <Button onClick={() => setOpenEditDialog(false)} color="primary">Cancel</Button>
+          <Button onClick={handleUpdate} color="primary">Save</Button>
         </DialogActions>
       </Dialog>
-
-      {/* Success Snackbar */}
-      <Snackbar
-        open={!!successMessage}
-        autoHideDuration={3000}
-        onClose={handleCloseSnackbar}
-        message={successMessage}
-      />
     </Box>
   );
 };
