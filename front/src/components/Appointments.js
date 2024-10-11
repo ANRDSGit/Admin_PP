@@ -335,7 +335,7 @@ const Appointments = () => {
         {
           field: 'actions',
           headerName: 'Actions',
-          width: 200,
+          width: 400,
           renderCell: (params) => (
             <div className={classes.centerCell}>
               <Button
