@@ -98,7 +98,7 @@ const Home = () => {
           </Paper>
         </Grid>
 
-        {/* Today's Appointments */}
+        {/* Today's Appointments
         <Grid item xs={12}>
           <Paper elevation={3} sx={{ padding: '1rem' }}>
             <Typography variant="h6" gutterBottom>
@@ -115,7 +115,7 @@ const Home = () => {
               ))}
             </List>
           </Paper>
-        </Grid>
+        </Grid> */}
 
         {/* Medical Center Details */}
         <Grid item xs={12}>
@@ -127,10 +127,10 @@ const Home = () => {
             At our Ayurvedic Medical Center, we focus on holistic health using time-tested, natural healing methods rooted in the principles of Ayurveda. Our expert team of practitioners is dedicated to providing personalized care that brings balance to your body, mind, and soul. Whether you are looking to manage stress, improve your overall well-being, or treat a specific condition, we are here to help you achieve optimal health.
             </Typography>
             <Typography variant="body2">
-              Address: 123 Medical Street, Healthcare City
+              Address: Ranawiru Wasantha Lankathilaka Mawatha, Duwa Road, Panadura.
             </Typography>
             <Typography variant="body2">
-              Contact: +123-456-7890 | Email: info@medicalcenter.com
+              Contact: +(94) 76 647 4436 | Email: patientpulseinfo@gmail.com
             </Typography>
           </Paper>
         </Grid>
