@@ -335,20 +335,29 @@ const App = () => {
       </Dialog>
 
       <Dialog
-        open={confirmDialogOpen2}
-        onClose={() => setConfirmDialogOpen2(false)}
-      >
-        <DialogTitle>Add Fingerprint</DialogTitle>
+  open={confirmDialogOpen2}
+  onClose={() => setConfirmDialogOpen2(false)}
+>
+       <DialogTitle>Add Fingerprint</DialogTitle>
         <DialogContent>
-          <DialogContentText>
-            Add Finger?
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setConfirmDialogOpen2(false)}>Cancel</Button>
-          <Button color="error" onClick={handleDelete}>Add</Button>
-        </DialogActions>
-      </Dialog>
+         <DialogContentText>
+            Please place your finger on the fingerprint scanner to proceed with the enrollment.
+        </DialogContentText>
+        <img
+        src="https://img.freepik.com/free-vector/fingerprint-concept-illustration_114360-3021.jpg?t=st=1729112904~exp=1729116504~hmac=bcca9675dafe916c816646555a8dea2e431b8449d3492548f7a8765b9c0d9715&w=900"
+        alt="Fingerprint Scanner"
+        style={{ width: '300px', height: '300px', margin: '20px auto', display: 'block' }}
+    />
+        <DialogContentText>
+          Once the fingerprint is successfully scanned, click "Add" to save it.
+        </DialogContentText>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={() => setConfirmDialogOpen2(false)}>Cancel</Button>
+        <Button color="primary" onClick={"#"}>Add</Button>
+      </DialogActions>
+    </Dialog>
+
     </Box>
   );
 };

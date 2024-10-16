@@ -124,9 +124,7 @@ const Home = () => {
               About the Medical Center
             </Typography>
             <Typography variant="body1" gutterBottom>
-              Welcome to our Medical Center! We provide quality healthcare services, including general check-ups, 
-              specialized treatments, and emergency services. Our center is equipped with state-of-the-art technology, 
-              and we have a dedicated team of experienced doctors and nurses to ensure the well-being of our patients.
+            At our Ayurvedic Medical Center, we focus on holistic health using time-tested, natural healing methods rooted in the principles of Ayurveda. Our expert team of practitioners is dedicated to providing personalized care that brings balance to your body, mind, and soul. Whether you are looking to manage stress, improve your overall well-being, or treat a specific condition, we are here to help you achieve optimal health.
             </Typography>
             <Typography variant="body2">
               Address: 123 Medical Street, Healthcare City
