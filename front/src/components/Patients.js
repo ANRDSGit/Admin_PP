@@ -12,7 +12,9 @@ const App = () => {
   const [error, setError] = useState('');
   const [editingPatient, setEditingPatient] = useState(null);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [confirmDialogOpen2, setConfirmDialogOpen2] = useState(false);
   const [patientToDelete, setPatientToDelete] = useState(null);
+  const [patientFinger, setPatientFinger] = useState(null);
   const token = localStorage.getItem('token');
   const apiBaseUrl = process.env.REACT_APP_API_BASE_URL;
 
@@ -84,6 +86,10 @@ const App = () => {
   const handleDeleteConfirmation = (id) => {
     setPatientToDelete(id);
     setConfirmDialogOpen(true);
+  };
+  const handleAddFinger = (id) => {
+    setPatientFinger(id);
+    setConfirmDialogOpen2(true);
   };
 
   // Delete patient after confirmation
@@ -290,6 +296,20 @@ const App = () => {
                   </Button>
                 ),
               },
+              {
+                field: 'Fingerprint',
+                headerName: 'Add Finger',
+                width: 150,
+                renderCell: (params) => (
+                  <Button
+                    variant="contained"
+                    color="error"
+                    onClick={() => handleAddFinger(params.row.id)}
+                  >
+                    Add Finger
+                  </Button>
+                ),
+              },
             ]}
             pageSize={5}
             rowsPerPageOptions={[5]}
@@ -311,6 +331,22 @@ const App = () => {
         <DialogActions>
           <Button onClick={() => setConfirmDialogOpen(false)}>Cancel</Button>
           <Button color="error" onClick={handleDelete}>Delete</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={confirmDialogOpen2}
+        onClose={() => setConfirmDialogOpen2(false)}
+      >
+        <DialogTitle>Add Fingerprint</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Add Finger?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmDialogOpen2(false)}>Cancel</Button>
+          <Button color="error" onClick={handleDelete}>Add</Button>
         </DialogActions>
       </Dialog>
     </Box>
