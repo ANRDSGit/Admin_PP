@@ -90,13 +90,15 @@ const NavigationBar = ({ isAuthenticated, onLogout }) => {
           </ListItem>
           <ListItem
             button
-            component={Link}
-            to="/medications"
-            onClick={toggleDrawer(false)}
+            onClick={() => {
+              toggleDrawer(false); // Close the drawer
+              window.location.href = 'https://notepad-frontend.netlify.app/'; // Redirect to external link
+            }}
             style={location.pathname === '/medications' ? { backgroundColor: '#f0f0f0' } : {}}
           >
             <ListItemText primary="Medications" />
           </ListItem>
+          
           <ListItem button onClick={handleLogout}>
             <ListItemText primary="Logout" />
           </ListItem>
@@ -145,9 +147,14 @@ const NavigationBar = ({ isAuthenticated, onLogout }) => {
           </>
         ) : (
           <>
-            <Typography variant="h6" style={{ flexGrow: 1 }}>
-              Patient Pulse
-            </Typography>
+            <Typography variant="h6" style={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
+            <img 
+              src="../../src/assests/images/logo.png" // Replace with your logo image path
+              alt="Logo"
+              style={{ width: '40px', height: '40px', marginRight: '10px' }} // Adjust as per your logo size
+            />
+            Patient Pulse
+           </Typography>
 
             {/* Live Date and Time in a Box */}
             <Box
@@ -203,7 +210,7 @@ const NavigationBar = ({ isAuthenticated, onLogout }) => {
                 <Button color="inherit" component={Link} to="/appointments" style={getLinkStyle('/appointments')}>
                   Appointments
                 </Button>
-                <Button color="inherit" onClick={() => window.location.href = 'http://localhost:5173/'}>
+                <Button color="inherit" onClick={() => window.location.href = 'https://notepad-frontend.netlify.app/'}>
                   Medications
                 </Button>
                 <Button color="inherit" onClick={handleLogout}>
