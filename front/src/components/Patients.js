@@ -89,6 +89,11 @@ const App = () => {
   };
   const handleAddFinger = (id) => {
     setPatientFinger(id);
+    const payload = {
+        "DeviceMode": "signup",
+        "FingerPrintCount": 4,
+        "GetUser": "U004"
+    }
     setConfirmDialogOpen2(true);
   };
 
@@ -304,7 +309,7 @@ const App = () => {
                   <Button
                     variant="contained"
                     color="error"
-                    onClick={() => handleAddFinger(params.row.id)}
+                    onClick={() => {handleAddFinger(params.row.id)}}
                   >
                     Add Finger
                   </Button>
