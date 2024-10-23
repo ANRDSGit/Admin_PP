@@ -1,333 +1,501 @@
-const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
-const bodyParser = require('body-parser');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const SECRET_KEY = "secret";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import { DataGrid } from "@mui/x-data-grid";
+import {
+  Box,
+  Typography,
+  Button,
+  TextField,
+  CircularProgress,
+  Grid,
+  Paper,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  MenuItem,
+  Select,
+  InputLabel,
+  FormControl,
+} from "@mui/material";
+import "react-toastify/dist/ReactToastify.css";
 
-const app = express();
+const App = () => {
+  const [patients, setPatients] = useState([]);
+  const [newPatient, setNewPatient] = useState({
+    name: "",
+    age: "",
+    gender: "",
+    bloodGroup: "",
+    email: "",
+    password: "",
+  }); // Added email field
+  const [searchTerm, setSearchTerm] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [editingPatient, setEditingPatient] = useState(null);
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [confirmDialogOpen2, setConfirmDialogOpen2] = useState(false);
+  const [patientToDelete, setPatientToDelete] = useState(null);
+  const [patientFinger, setPatientFinger] = useState(null);
+  const token = localStorage.getItem("token");
+  const apiBaseUrl = process.env.REACT_APP_API_BASE_URL;
+  const [isAdded, setIsAdded] = useState(false);
 
-app.use(cors());
-app.use(bodyParser.json());
+  useEffect(() => {
+    setLoading(true);
+    axios
+      .get(`${apiBaseUrl}/patients`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((res) => {
+        setPatients(res.data);
+      })
+      .catch((err) => {
+        setError("Error fetching patients");
+        console.error(err);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, [token]);
 
-const corsOptions = {
-  origin: '*',  // Allow only your frontend's origin
-  credentials: true,            // Allow cookies
-  optionsSuccessStatus: 200
-};
-app.use(cors(corsOptions));
-
-// Connect to MongoDB
-mongoose.connect('mongodb+srv://anrds:1234@cluster0.iowtq.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0');
-
-const { initializeApp } = require("firebase/app");
-const { getDatabase } = require("firebase/database");
-const { ref, set, onValue, update } = require("firebase/database");
-
-const firebaseConfig = {
-  apiKey: "AIzaSyDk8LtduJ4mXqxmmwz0nQ2YySaWHepA0a8",
-  authDomain: "patientpulse-e29f3.firebaseapp.com",
-  databaseURL: "https://patientpulse-e29f3-default-rtdb.firebaseio.com",
-  projectId: "patientpulse-e29f3",
-  storageBucket: "patientpulse-e29f3.appspot.com",
-  messagingSenderId: "435646006570",
-  appId: "1:435646006570:web:caaf6313fd84da3949ca53",
-  measurementId: "G-DE74989ZE5",
-};
-
-const appDb = initializeApp(firebaseConfig);
-
-const database = getDatabase(appDb);
-
-app.post("/addFingerprintData", (req, res) => {
-  const { DeviceMode, FingerPrintCount, GetUser } = req.body;
-
-  // Set the data structure in Firebase
-  update(ref(database, "/"), {
-    DeviceMode,
-    FingerPrintCount,
-    GetUser,
-  })
-    .then(() => {
-      res.status(200).send("Data added successfully!");
-    })
-    .catch((error) => {
-      res.status(500).send("Error adding data: " + error.message);
-    });
-});
-
-app.get("/getFingerprintData", (req, res) => {
-  try {
-    const starCountRef = ref(database, "/catchUserId");
-
-    onValue(
-      starCountRef,
-      (snapshot) => {
-        const data = snapshot.val();
-        res.status(200).send({
-          message: "Data retrieved successfully!",
-          data: data,
+  // Create new patient
+  const handleCreate = () => {
+    setLoading(true);
+    axios
+      .post(
+        `${apiBaseUrl}/patients`,
+        {
+          name: newPatient.name,
+          age: Number(newPatient.age),
+          gender: newPatient.gender,
+          bloodGroup: newPatient.bloodGroup,
+          email: newPatient.email, // Include email in the payload
+          number: newPatient.number, // Include number in the payload
+          password: newPatient.password,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      )
+      .then((res) => {
+        setPatients([...patients, res.data.patient]);
+        // Reset form
+        setNewPatient({
+          name: "",
+          age: "",
+          gender: "",
+          bloodGroup: "",
+          number: "",
+          email: "",
+          password: "",
         });
-      },
-      {
-        onlyOnce: true,
-      }
-    );
-  } catch (error) {
-    res.status(500).send("Error getting data: " + error.message);
-  }
-});
+      })
+      .catch((err) => {
+        setError("Error creating patient");
+        console.error(err);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  };
 
-// Define Admin Schema
-const adminSchema = new mongoose.Schema({
-  username: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
-});
+  // Search patients
+  const handleSearch = () => {
+    setLoading(true);
+    axios
+      .get(`${apiBaseUrl}/patients/search/${searchTerm}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((res) => {
+        setPatients(res.data);
+      })
+      .catch((err) => {
+        setError("Error searching patients");
+        console.error(err);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  };
 
-const Admin = mongoose.model('Admin', adminSchema);
+  // Open confirmation dialog for deletion
+  const handleDeleteConfirmation = (id) => {
+    setPatientToDelete(id);
+    setConfirmDialogOpen(true);
+  };
 
-// Create a default admin user
-async function createDefaultAdmin() {
-  const adminExists = await Admin.findOne({ username: 'admin' });
-  if (!adminExists) {
-    const hashedPassword = await bcrypt.hash('admin123', 10);
-    const admin = new Admin({ username: 'admin', password: hashedPassword });
-    await admin.save();
-    console.log('Default admin created: admin/admin123');
-  }
-}
+  // Add Fingerprint
+  const handleAddFinger = (id) => {
+    setPatientFinger(id);
 
-createDefaultAdmin();
+    const fingerPrintId = id.split("U00")[1];
+    const fingerprintCount = parseInt(fingerPrintId, 10);
 
-// Admin login route
-app.post('/admin/login', async (req, res) => {
-  const { username, password } = req.body;
-  const admin = await Admin.findOne({ username });
+    // Payload
+    const payload = {
+      DeviceMode: "signup",
+      FingerPrintCount: fingerprintCount,
+      GetUser: id,
+    };
 
-  if (!admin) {
-    return res.status(400).send({ message: 'Invalid credentials' });
-  }
+    axios
+      .post(`${apiBaseUrl}/addFingerprintData`, payload)
+      .then((res) => {
+        console.log(res.data);
+        setConfirmDialogOpen2(true); // Open the modal
 
-  const isMatch = await bcrypt.compare(password, admin.password);
-  if (!isMatch) {
-    return res.status(400).send({ message: 'Invalid credentials' });
-  }
+        // Start checking if DeviceMode is "auth" after modal opens
+        const interval = setInterval(async () => {
+          try {
+            const response = await axios.get(`${apiBaseUrl}/checkDeviceMode`);
+            if (response.data.status === true) {
+              // setConfirmDialogOpen2(false);
+              setIsAdded(true);
+              clearInterval(interval);
+            }
+          } catch (error) {
+            console.error("Error checking device mode:", error);
+          }
+        }, 3000);
+      })
+      .catch((err) => {
+        console.error(err);
+      });
+  };
 
-  const token = jwt.sign({ id: admin._id }, SECRET_KEY, { expiresIn: '1h' });
-  res.send({ token });
-});
+  // Delete patient after confirmation
+  const handleDelete = () => {
+    setLoading(true);
+    axios
+      .delete(`${apiBaseUrl}/patients/${patientToDelete}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then(() => {
+        setPatients(patients.filter((p) => p._id !== patientToDelete)); // Remove patient from list
+        setConfirmDialogOpen(false); // Close the dialog after deletion
+      })
+      .catch((err) => {
+        setError("Error deleting patient");
+        console.error(err);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  };
 
-// Middleware to authenticate JWT
-function authenticateToken(req, res, next) {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
+  // Update patient's age
+  const handleAgeUpdate = (id, age) => {
+    setLoading(true);
+    axios
+      .put(
+        `${apiBaseUrl}/patients/${id}`,
+        { age: Number(age) },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      )
+      .then((res) => {
+        setPatients(patients.map((p) => (p._id === id ? res.data : p)));
+        setEditingPatient(null); // Reset after updating
+      })
+      .catch((err) => {
+        setError("Error updating patient age");
+        console.error(err);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  };
 
-  if (!token) {
-    return res.status(401).send({ message: 'Access denied' });
-  }
+  return (
+    <Box p={2}>
+      <Typography variant="h4" gutterBottom textAlign="center">
+        Patient Dashboard
+      </Typography>
 
-  try {
-    const decoded = jwt.verify(token, SECRET_KEY);
-    req.user = decoded;
-    next();
-  } catch (err) {
-    res.status(403).send({ message: 'Invalid token' });
-  }
-}
+      {error && (
+        <Typography color="error" mb={2}>
+          {error}
+        </Typography>
+      )}
 
-// Define Patient Schema
-const patientSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  age: { type: Number, required: true },
-  gender: { type: String, required: true },
-  bloodGroup: { type: String, required: true },
-  number: { type: Number, required: true },  // Added number field
-  email: { type: String, required: true, unique: true },  // Added email field
-  password: { type: String, required: true },
-  createdAt: { type: Date, default: Date.now },
-});
+      {loading && <CircularProgress />}
 
-const Patient = mongoose.model('Patient', patientSchema);
+      {/* Search bar */}
+      <Grid
+        container
+        spacing={2}
+        alignItems="center"
+        justifyContent="center"
+        sx={{ mb: 2 }}
+      >
+        <Grid item xs={12} md={8}>
+          <TextField
+            label="Search Patients"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            fullWidth
+          />
+        </Grid>
+        <Grid item xs={12} md={2}>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleSearch}
+            fullWidth
+          >
+            Search
+          </Button>
+        </Grid>
+      </Grid>
 
+      {/* Form to add new patient */}
+      <Paper elevation={3} sx={{ p: 2, mb: 4 }}>
+        <Typography variant="h6" gutterBottom textAlign="center">
+          Add New Patient
+        </Typography>
+        <Grid container spacing={2}>
+          <Grid item xs={12} md={4}>
+            <TextField
+              label="Name"
+              value={newPatient.name}
+              onChange={(e) =>
+                setNewPatient({ ...newPatient, name: e.target.value })
+              }
+              fullWidth
+            />
+          </Grid>
+          <Grid item xs={12} md={2}>
+            <TextField
+              label="Age"
+              type="number"
+              value={newPatient.age}
+              onChange={(e) =>
+                setNewPatient({ ...newPatient, age: e.target.value })
+              }
+              fullWidth
+            />
+          </Grid>
+          <Grid item xs={12} md={2}>
+            <FormControl fullWidth>
+              <InputLabel>Gender</InputLabel>
+              <Select
+                value={newPatient.gender}
+                onChange={(e) =>
+                  setNewPatient({ ...newPatient, gender: e.target.value })
+                }
+              >
+                <MenuItem value="Male">Male</MenuItem>
+                <MenuItem value="Female">Female</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={12} md={2}>
+            <FormControl fullWidth>
+              <InputLabel>Blood Group</InputLabel>
+              <Select
+                value={newPatient.bloodGroup}
+                onChange={(e) =>
+                  setNewPatient({ ...newPatient, bloodGroup: e.target.value })
+                }
+              >
+                <MenuItem value="A+">A+</MenuItem>
+                <MenuItem value="A-">A-</MenuItem>
+                <MenuItem value="B+">B+</MenuItem>
+                <MenuItem value="B-">B-</MenuItem>
+                <MenuItem value="AB+">AB+</MenuItem>
+                <MenuItem value="AB-">AB-</MenuItem>
+                <MenuItem value="O+">O+</MenuItem>
+                <MenuItem value="O-">O-</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={12} md={4}>
+            <TextField
+              label="Email"
+              type="email"
+              value={newPatient.email}
+              onChange={(e) =>
+                setNewPatient({ ...newPatient, email: e.target.value })
+              }
+              fullWidth
+            />
+          </Grid>
 
-// Routes for CRUD operations (protected)
-app.post('/patients', authenticateToken, async (req, res) => {
-  try {
-    const { name, age, gender, bloodGroup,number, email, password } = req.body;
-    console.log("Received data:", req.body); // Log the request body for debugging
+          <Grid item xs={12} md={4}>
+            <TextField
+              label="Number"
+              type="number"
+              value={newPatient.number}
+              onChange={(e) =>
+                setNewPatient({ ...newPatient, number: e.target.value })
+              }
+              fullWidth
+            />
+          </Grid>
 
-    // Check if email already exists
-    const existingPatient = await Patient.findOne({ email });
-    if (existingPatient) {
-      return res.status(400).json({ message: 'Email already exists' });
-    }
+          <Grid item xs={12} md={2}>
+            <TextField
+              label="Password"
+              type="password"
+              value={newPatient.password}
+              onChange={(e) =>
+                setNewPatient({ ...newPatient, password: e.target.value })
+              }
+              fullWidth
+            />
+          </Grid>
+          <Grid item xs={12} md={2}>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleCreate}
+              fullWidth
+            >
+              Add Patient
+            </Button>
+          </Grid>
+        </Grid>
+      </Paper>
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const newPatient = new Patient({
-      name,
-      age,
-      gender,
-      bloodGroup,
-      number,  // Ensure the number is being included here
-      email,  // Ensure the email is being included here
-      password: hashedPassword,
-    });
+      {/* Patients table */}
+      {!loading && (
+        <Box sx={{ height: { xs: 300, md: 400 } }}>
+          <DataGrid
+            rows={patients.map((patient) => ({
+              ...patient,
+              id: patient._id,
+            }))}
+            columns={[
+              { field: "name", headerName: "Patient Name", width: 150 },
+              {
+                field: "age",
+                headerName: "Age",
+                width: 100,
+                renderCell: (params) => {
+                  const isEditing = editingPatient === params.row.id;
+                  return isEditing ? (
+                    <TextField
+                      type="number"
+                      value={params.row.age}
+                      onChange={(e) =>
+                        setPatients(
+                          patients.map((p) =>
+                            p._id === params.row.id
+                              ? { ...p, age: e.target.value }
+                              : p
+                          )
+                        )
+                      }
+                      onBlur={() =>
+                        handleAgeUpdate(params.row.id, params.row.age)
+                      }
+                      fullWidth
+                    />
+                  ) : (
+                    <span onClick={() => setEditingPatient(params.row.id)}>
+                      {params.value}
+                    </span>
+                  );
+                },
+              },
+              { field: "gender", headerName: "Gender", width: 100 },
+              { field: "bloodGroup", headerName: "Blood Group", width: 100 },
+              { field: "email", headerName: "Email", width: 150 }, // Added email field in table
+              { field: "number", headerName: "Number", width: 150 },
+              {
+                field: "delete",
+                headerName: "Actions",
+                width: 150,
+                renderCell: (params) => (
+                  <Button
+                    variant="contained"
+                    color="error"
+                    onClick={() => handleDeleteConfirmation(params.row.id)}
+                  >
+                    Delete
+                  </Button>
+                ),
+              },
+              {
+                field: "Fingerprint",
+                headerName: "Add Finger",
+                width: 150,
+                renderCell: (params) => (
+                  <Button
+                    variant="contained"
+                    color="error"
+                    onClick={() => {
+                      handleAddFinger(params.row.userId);
+                    }}
+                  >
+                    Add Finger
+                  </Button>
+                ),
+              },
+            ]}
+            pageSize={5}
+            rowsPerPageOptions={[5]}
+          />
+        </Box>
+      )}
 
-    await newPatient.save();
-    res.status(201).json({ message: 'Patient registered successfully', patient: newPatient });
-  } catch (error) {
-    console.error("Error registering patient:", error); // Log the error for debugging
-    res.status(500).json({ error: 'Error registering patient' });
-  }
-});
+      {/* Delete confirmation dialog */}
+      <Dialog
+        open={confirmDialogOpen}
+        onClose={() => setConfirmDialogOpen(false)}
+      >
+        <DialogTitle>Delete Patient</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete this patient?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmDialogOpen(false)}>Cancel</Button>
+          <Button color="error" onClick={handleDelete}>
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
 
-app.get('/patients', authenticateToken, async (req, res) => {
-  const patients = await Patient.find();
-  res.send(patients);
-});
+      <Dialog
+        open={confirmDialogOpen2}
+        onClose={() => setConfirmDialogOpen2(false)}
+      >
+        <DialogTitle>Add Fingerprint</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Please place your finger on the fingerprint scanner to proceed with
+            the enrollment.
+          </DialogContentText>
+          <img
+            src="https://img.freepik.com/free-vector/fingerprint-concept-illustration_114360-3021.jpg?t=st=1729112904~exp=1729116504~hmac=bcca9675dafe916c816646555a8dea2e431b8449d3492548f7a8765b9c0d9715&w=900"
+            alt="Fingerprint Scanner"
+            style={{
+              width: "300px",
+              height: "300px",
+              margin: "20px auto",
+              display: "block",
+            }}
+          />
+          <DialogContentText>
+            Once the fingerprint is successfully scanned, click "Add" to save
+            it.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmDialogOpen2(false)}>Cancel</Button>
+          <Button color="primary" onClick={() => setConfirmDialogOpen2(false)} disabled={!isAdded}>
+            Add
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
+  );
+};
 
-app.get('/patients/search/:name', authenticateToken, async (req, res) => {
-  const patients = await Patient.find({ name: new RegExp(req.params.name, 'i') });
-  res.send(patients);
-});
-
-app.put('/patients/:id', authenticateToken, async (req, res) => {
-  const { email, name, age, gender, bloodGroup } = req.body;
-
-  // Check if email already exists for another patient
-  const existingPatient = await Patient.findOne({ email, _id: { $ne: req.params.id } });
-  if (existingPatient) {
-    return res.status(400).json({ message: 'Email already in use' });
-  }
-
-  const patient = await Patient.findByIdAndUpdate(req.params.id, { email, name, age, gender, bloodGroup }, { new: true });
-  res.send(patient);
-});
-
-app.delete('/patients/:id', authenticateToken, async (req, res) => {
-  await Patient.findByIdAndDelete(req.params.id);
-  res.send({ message: 'Patient deleted' });
-});
-
-
-
-// Define Appointment Schema
-const appointmentSchema = new mongoose.Schema({
-  patientName: String,
-  date: Date,
-  time: String,
-  appointmentType: { type: String, enum: ['physical', 'remote'], required: true },  
-  remoteLink: String,  // Add field to store remote appointment link
-  createdAt: { type: Date, default: Date.now },
-});
-
-const Appointment = mongoose.model('Appointment', appointmentSchema);
-
-// Create appointment route
-app.post('/appointments', authenticateToken, async (req, res) => {
-  const { patientName, date, time, appointmentType } = req.body;
-
-  const parsedDate = new Date(date);
-  if (isNaN(parsedDate)) {
-    return res.status(400).send({ message: 'Invalid date format' });
-  }
-
-  if (!['physical', 'remote'].includes(appointmentType)) {
-    return res.status(400).send({ message: 'Invalid appointment type' });
-  }
-
-  const appointment = new Appointment({
-    patientName,
-    date: parsedDate,
-    time,
-    appointmentType,
-  });
-
-  await appointment.save();
-  res.send(appointment);
-});
-
-// Update remote appointment link
-app.put('/appointments/:id/link', authenticateToken, async (req, res) => {
-  const { remoteLink } = req.body;
-
-  try {
-    const updatedAppointment = await Appointment.findByIdAndUpdate(
-      req.params.id,
-      { remoteLink },
-      { new: true, runValidators: true }
-    );
-
-    if (!updatedAppointment) {
-      return res.status(404).send({ message: 'Appointment not found' });
-    }
-
-    res.send(updatedAppointment);
-  } catch (error) {
-    res.status(500).json({ error: 'Error updating appointment link' });
-  }
-});
-
-app.get('/appointments', authenticateToken, async (req, res) => {
-  const appointments = await Appointment.find();
-  res.send(appointments);
-});
-
-app.get('/appointments/search/:patientName', authenticateToken, async (req, res) => {
-  const appointments = await Appointment.find({
-    patientName: new RegExp(req.params.patientName, 'i'),
-  });
-  res.send(appointments);
-});
-
-// Delete appointment
-app.delete('/appointments/:id', authenticateToken, async (req, res) => {
-  await Appointment.findByIdAndDelete(req.params.id);
-  res.send({ message: 'Appointment deleted' });
-});
-
-// Define Medication Schema
-const medicationSchema = new mongoose.Schema({
-  name: String,
-  price: Number,
-  quantity: Number,
-  imageUrl: String,
-  createdAt: { type: Date, default: Date.now },
-});
-
-const Medication = mongoose.model('Medication', medicationSchema);
-
-// Routes for CRUD operations on medications (protected)
-app.post('/medications', authenticateToken, async (req, res) => {
-  const medication = new Medication(req.body);
-  await medication.save();
-  res.send(medication);
-});
-
-app.get('/medications', authenticateToken, async (req, res) => {
-  const medications = await Medication.find();
-  res.send(medications);
-});
-
-app.get('/medications/search/:name', authenticateToken, async (req, res) => {
-  const medications = await Medication.find({
-    name: new RegExp(req.params.name, 'i'),
-  });
-  res.send(medications);
-});
-
-app.put('/medications/:id', authenticateToken, async (req, res) => {
-  const medication = await Medication.findByIdAndUpdate(req.params.id, req.body, { new: true });
-  res.send(medication);
-});
-
-app.delete('/medications/:id', authenticateToken, async (req, res) => {
-  await Medication.findByIdAndDelete(req.params.id);
-  res.send({ message: 'Medication deleted' });
-});
-
-// Start the server
-app.listen(5000, () => {
-  console.log('Backend running on port 5000');
-});
+export default App;
